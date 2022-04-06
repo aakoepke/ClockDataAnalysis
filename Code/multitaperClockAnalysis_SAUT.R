@@ -10,9 +10,6 @@ primerData1$t = 1:dim(primerData1)[1]
 ggplot(primerData1,aes(t,X1tilde))+
   geom_point()
 
-kjgllkfsjg 
-
-
 test=spectrum(primerData1$X1tilde)
 
 res=data.frame(f=test$freq,spec=test$spec)
