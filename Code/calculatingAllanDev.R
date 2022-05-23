@@ -86,42 +86,32 @@ ggplot(allSEests,aes(as.factor(N),out,color=type))+
 
 ########overlapping
 
-y=rnorm(10)
-m=5
-overlapping_avar_fn=function(y,m){
+y=1:8#rnorm(10)
+m=3
+# overlapping_avar_fn=function(y,m){
   # tau=m?
   M=length(y)
   
-  numberOfGroups=M-m+1
+  numberOfGroups=M-m
   groupmeans = numeric(numberOfGroups)
   
-  for(i in 1:(M+1-m)){
-    groupmeans[i]=mean(y[i:(i+m-1)])  
+  for(i in 1:(M-m)){
+    print(i:(i+m))
+    groupmeans[i]=mean(y[i:(i+m)])  
   }
 
 
-  for(j in 1:(M-2*m+1)){
-    for(i in j:(j+m-1))
+  out=0
+  for(i in 1:(M-2*m)){
+    # print(paste("i=",i))
+    # for(i in j:(j+m-1)){
+      # print(paste("i=",i, ", i+3=",i+3))
+      # print(i+3)
+      out=out+(groupmeans[i+m]-groupmeans[i])^2
+    # }
   }
-  
-  1/(2*m^2*(M-2*m+1))
-  
+  # 1/(2*m^2*(M-2*m+1))
+  out=out/(2*(M-2*m+1))
 
-    
-    
-    
-    
-        
-  
-  
-  div=seq(1,n,by = tau)
-  
-  M=length(div)-1 #number of groups
-  
-  groupmeans = numeric(M)
-  for(i in 1:M){
-    groupmeans[i]=mean(y[div[i]:(div[i+1]-1)])
-  }
-  
-  1/(2*(M-1)) * sum(diff(groupmeans)^2)
+return(out)
 }
