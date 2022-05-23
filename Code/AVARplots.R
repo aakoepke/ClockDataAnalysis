@@ -259,3 +259,54 @@ getAvars=function(N, y){
 
 
 
+##### From: Frequency Stability Analysis Using R ######
+
+
+# Function to calculate Modified Allan deviation
+# MVAR for phase data
+# Argument tau is basic data sampling interval
+# Each analysis tau is tau*m
+# where argument m is averaging factor 1 to N/3
+pmdev<-function(x, tau=1, m=1){
+  N=length(x)
+  mvar=0
+  # Outer loop
+  for(j in 1:(N-3*m+1))
+  {
+    s=0
+    # Inner loop
+    for(i in j:(j+m-1))
+    {
+      s=s+(x[i+(2*m)]-2*x[i+m]+x[i])
+    }
+    mvar=mvar+s^2
+  }
+  # Scaling
+  mvar=mvar/(2*m^2*m^2*tau^2*(N-3*m+1))
+  return (sqrt(mvar))
+}
+
+
+fmdev <- function(y,tau = 1, m = 1){
+  M = length(y)
+  mvar=0
+  # Outer loop
+  for(j in 1:(M-3*m+2))
+  {
+    # First Inner loop
+    for(i in j:(j+m-1))
+    {
+      #Second Inner loop
+      for(k in i:(i + m - 1)){
+        s = s + y[k + m] - y[k]
+      }
+    }
+    mvar=mvar+s^2
+  }
+  # Scaling
+  mvar=mvar/(2*m^2*m^2*tau^2*(N-3*m+1))
+  return (sqrt(mvar))
+}
+
+
+
