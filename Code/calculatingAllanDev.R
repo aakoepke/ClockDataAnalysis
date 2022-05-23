@@ -3,6 +3,7 @@ library(readr)
 library(ggplot2)
 library(dplyr)
 
+
 avar_fn=function(y,tau){
   n=length(y)
   
@@ -18,33 +19,67 @@ avar_fn=function(y,tau){
   1/(2*(M-1)) * sum(diff(groupmeans)^2)
 }
 
+
+########overlapping
+
+overlapping_avar_fn=function(y,m){
+  M=length(y)
+  
+  numberOfGroups=M-m
+  groupmeans = numeric(numberOfGroups)
+  
+  for(i in 1:(M-m)){
+    groupmeans[i]=mean(y[i:(i+m)])  
+  }
+  
+  out=0
+  for(i in 1:(M-2*m)){
+    out=out+(groupmeans[i+m]-groupmeans[i])^2
+  }
+  out=out/(2*(M-2*m+1))
+  
+  return(out)
+}
+
+overlapping_avar_fn(y,500)
+
 getAvars=function(N){
   y=rnorm(N,0,1) 
   taus = c(1,2,3,5,10,20)
-  taus = c(taus,seq(40,N,by=100)) ## this goes too far, gives lots of NAs from avar_fn, fix later 
+  taus = c(taus,seq(40,N/2,by=100)) ## this goes too far, gives lots of NAs from avar_fn, fix later 
   
   avars=numeric(length(taus))
+  overlapping_avars=numeric(length(taus))
   
   for (i in 1:length(taus)){
     avars[i]=avar_fn(y,taus[i])
+    overlapping_avars[i]=overlapping_avar_fn(y,taus[i])
   }
+  
   m1=data.frame(taus=taus,avars=avars)  
   fit=lm(log(sqrt(avars))~log(taus),data = m1)
   slope=as.numeric(fit$coefficients[2])
   int=as.numeric(fit$coefficients[1])
   
-  avarRes=data.frame(taus=taus,avars=avars,N=N,slope=slope,int=int)  
+  avarRes=data.frame(taus=taus,avars=avars, overavars=overlapping_avars,N=N,slope=slope,int=int)  
 
   ##########################################
   # get SE
-  ##########################################
+  # ##########################################
+
+  m2=data.frame(taus=taus,oavars=overlapping_avars)  
+  fit2=lm(log(sqrt(oavars))~log(taus),data = m2)
+  slope2=as.numeric(fit2$coefficients[2])
+  int2=as.numeric(fit2$coefficients[1])
+  
   SEests=data.frame()
   
+  onew=data.frame(N=N,out=exp(int2+slope2*log(N)), type="OAD")
   new=data.frame(N=N,out=exp(int+slope*log(N)), type="AD")
   new2=data.frame(N=N,out=sd(y)/sqrt(N), type="SE")
   new3=data.frame(N=N,out=1/sqrt(N), type="true")
-  SEests=bind_rows(new,new2,new3)
-  
+  SEests=bind_rows(new,new2,new3,onew)
+
   return(list(avarRes=avarRes,SEests=SEests))
 }
 
@@ -65,9 +100,10 @@ for(j in 1:1){
 
 ggplot(allavarRes,aes(taus,sqrt(avars)))+
   geom_point()+
+  geom_point(aes(taus,sqrt(overavars)),col="blue")+
   scale_x_continuous(trans = "log")+
   scale_y_continuous(trans = "log")+
-  stat_smooth(method = "lm",se = F)+
+  # stat_smooth(method = "lm",se = F)+
   facet_wrap(~N)#,scales = "free")
 
 ggplot(allSEests,aes(N,out,color=type))+
@@ -83,35 +119,3 @@ ggplot(allSEests,aes(as.factor(N),out,color=type))+
 ### ADEV results look biased, not converging to what I expect. 
 ### Maybe overlapping adev helps this? 
 ### Or Modified Allan Deviation?
-
-########overlapping
-
-y=1:8#rnorm(10)
-m=3
-# overlapping_avar_fn=function(y,m){
-  # tau=m?
-  M=length(y)
-  
-  numberOfGroups=M-m
-  groupmeans = numeric(numberOfGroups)
-  
-  for(i in 1:(M-m)){
-    print(i:(i+m))
-    groupmeans[i]=mean(y[i:(i+m)])  
-  }
-
-
-  out=0
-  for(i in 1:(M-2*m)){
-    # print(paste("i=",i))
-    # for(i in j:(j+m-1)){
-      # print(paste("i=",i, ", i+3=",i+3))
-      # print(i+3)
-      out=out+(groupmeans[i+m]-groupmeans[i])^2
-    # }
-  }
-  # 1/(2*m^2*(M-2*m+1))
-  out=out/(2*(M-2*m+1))
-
-return(out)
-}
