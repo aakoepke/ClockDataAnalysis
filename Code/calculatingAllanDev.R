@@ -41,12 +41,15 @@ overlapping_avar_fn=function(y,m){
   return(out)
 }
 
-overlapping_avar_fn(y,500)
 
 getAvars=function(N){
   y=rnorm(N,0,1) 
-  taus = c(1,2,3,5,10,20)
-  taus = c(taus,seq(40,N/2,by=100)) ## this goes too far, gives lots of NAs from avar_fn, fix later 
+  # taus = c(1,2,3,5,10,20)
+  # taus = c(taus,seq(40,N/2,by=100)) ## this goes too far, gives lots of NAs from avar_fn, fix later 
+  
+  maxn = ceiling((N-1)/2) 
+  p = floor (log10(maxn)/log10(2)) #Number of clusters
+  taus=2^(0:p)
   
   avars=numeric(length(taus))
   overlapping_avars=numeric(length(taus))
@@ -88,7 +91,7 @@ Ns=c(100,1000,4000,10000,20000)
 
 allavarRes=data.frame()
 allSEests=data.frame()
-for(j in 1:1){
+for(j in 1:10){
   for(N in Ns){
     tmp=getAvars(N)
     
@@ -119,3 +122,14 @@ ggplot(allSEests,aes(as.factor(N),out,color=type))+
 ### ADEV results look biased, not converging to what I expect. 
 ### Maybe overlapping adev helps this? 
 ### Or Modified Allan Deviation?
+
+
+ggplot(filter(allavarRes,N==10000),aes(taus,sqrt(overavars),col=as.factor(slope)))+
+  geom_point()+
+  # geom_point(aes(taus,sqrt(overavars)),col="blue")+
+  scale_x_continuous(trans = "log")+
+  scale_y_continuous(trans = "log")+
+  stat_smooth(method = "lm",se = F)+
+  facet_wrap(~N)#,scales = "free")
+
+
