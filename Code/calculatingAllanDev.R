@@ -83,6 +83,8 @@ getAvars=function(N){
   return(list(avarRes=avarRes,SEests=SEests))
 }
 
+
+
 ### increase N, what does adev converge to, for which tau
 Ns=c(100,1000,4000,10000,20000)
 

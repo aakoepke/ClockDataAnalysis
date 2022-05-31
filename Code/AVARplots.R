@@ -6,7 +6,7 @@ library(avar)
 
 ###Gaussian White Noise####
 
-N = 2048
+N = 4096
 set.seed(10)
 y=rnorm(N)
 
@@ -28,13 +28,23 @@ avar_WN <- function(N,sigma.2){
 
 
 ##look at a bunch of simulations
-
-avar_saved_WN <- matrix(NA, nrow = 100, ncol = 112)
+avar_saved_WN <- matrix(NA, nrow = 100, ncol = 214)
+modavar_saved_WNPM <- matrix(NA, nrow = 100, ncol = 80)
+ms <- c(1:10,15,20,seq(25,floor(N/3), by = 20))
+pmavar.WN <- rep(NA, times = length(ms))
 
 for(i in 1:100){
   set.seed(i)
-  y <- rnorm(N)
-  avar_saved_WN[i,] <- getAvars(N,y)$avarRes$avars
+  x <- rnorm(N)
+  #x <- diffinv(y)
+  
+  for(k in 1:length(ms)){
+    print(k)
+    pmavar.WN[k] <- pmavar(x,tau = 1, m = ms[k])
+  }
+  
+  modavar_saved_WNPM[i,] <-  pmavar.WN   # original avar: getAvars(N,y)$avarRes$avars
+  #avar_saved_WN[i,] <- getAvars(N,y)$avarRes$avars
 }
 
 colors = rainbow(100)
@@ -49,9 +59,16 @@ avar_WN_means <- apply(log10(avar_saved_WN), MARGIN = 2, FUN = "mean")
 
 points(log10(AVAR.WN$avarRes$taus), avar_WN_means, pch = 19, col = "blue")
 
+modavar_WNPM_means <- apply(log10(modavar_saved_WNPM), MARGIN = 2, FUN = "mean")
+points(log10(ms),modavar_WNPM_means, pch = 19, col = "dark green")
+
+
 legend(x = 0, y = -1, legend = c("Theoretical", "Estimated", "Mean"), col = c("black", "red", "blue"), lty = c(1,NA,NA),pch = c(NA,1,19), lwd = c(2,1,1))
 
-
+#difference in mean to theoretical
+diffs <- log10(avar_WN(N,1)[AVAR.WN$avarRes$taus])- avar_WN_means
+plot(log10(AVAR.WN$avarRes$taus), diffs, ylab = "log(Theoretical) - log(Means)", xlab = "log(tau)", pch = 19)
+ 
 
 ###AR(1) Noise####
 set.seed(10)
@@ -210,8 +227,9 @@ points(log10(AVAR.AR1$avarRes$taus), avar_RW_FD_means, pch = 19, col = "blue")
 legend(x = 0, y = -2, legend = c("Theoretical WN", "Estimated", "Mean"), col = c("black", "red", "blue"), lty = c(1,NA,NA),pch = c(NA,1,19), lwd = c(2,1,1))
 
 
-#####AVAR computation function #####
+#####AVAR computation functions #####
 
+#### Regular Allan Variance #####
 avar_fn=function(y,tau){
   n=length(y)
   
@@ -258,16 +276,44 @@ getAvars=function(N, y){
 }
 
 
+###Overlapping AVAR ####
+
+########overlapping
+
+y=1:10*1#rnorm(10)
+m=3
+overlapping_avar_fn=function(y,m){
+  M=length(y)
+  
+  numberOfGroups=M-m
+  groupmeans = numeric(numberOfGroups)
+  
+  for(i in 1:(M-m)){
+    print(i:(i+m))
+    groupmeans[i]=mean(y[i:(i+m)])
+  }
+
+  
+  out=0
+  for(i in 1:(M-2*m)){
+    out=out+(groupmeans[i+m]-groupmeans[i])^2
+  }
+  out=out/(2*(M-2*m+1))
+  
+  return(out)
+}
+
 
 ##### From: Frequency Stability Analysis Using R ######
 
+#####MODIFIED ALLAN VARIANCE #####
 
 # Function to calculate Modified Allan deviation
 # MVAR for phase data
 # Argument tau is basic data sampling interval
 # Each analysis tau is tau*m
 # where argument m is averaging factor 1 to N/3
-pmdev<-function(x, tau=1, m=1){
+pmavar<-function(x, tau=1, m=1){
   N=length(x)
   mvar=0
   # Outer loop
@@ -282,31 +328,113 @@ pmdev<-function(x, tau=1, m=1){
     mvar=mvar+s^2
   }
   # Scaling
-  mvar=mvar/(2*m^2*m^2*tau^2*(N-3*m+1))
-  return (sqrt(mvar))
+  mvar=mvar/(2*m^4*tau^2*(N-3*m+1))
+  return (mvar)
 }
 
 
-fmdev <- function(y,tau = 1, m = 1){
+##Example of modified avar: white noise###
+
+#frac. freq. deviates
+N = 4096
+y = rnorm(N)
+AVAR.WN <- getAvars(N,y)
+
+#phase data
+
+x <- diffinv(y)
+
+#calculate pmdev
+max.tau <- floor(N/3)
+pmdev.WN <- rep(NA, times = max.tau)
+ms <- c(1:10,15,20,seq(25,floor(N/3), by = 20))
+for(m in ms){
+pmdev.WN[m] <- pmdev(x,tau = 1, m = m)
+}
+
+
+plot(log10(ms), na.omit(log10(pmdev.WN^2)), ylim = c(-4,0.5), ylab = "log(avar)", xlab = "log(tau)")
+
+points(log10(AVAR.WN$avarRes$taus),log10(AVAR.WN$avarRes$avars), col = "red")
+
+
+##Example of modified avar: AR(1) process###
+
+#frac. freq. deviates
+N = 4096
+y = arima.sim(n = N, list(ar = 0.5))
+AVAR.AR1 <- getAvars(N,y)
+
+#phase data
+
+x <- diffinv(y)
+
+#calculate pmdev
+pmdev.AR1 <- rep(NA, times = N/2)
+for(m in 1:(N/2)){
+  pmdev.AR1[m] <- pmdev(x,m)
+}
+
+
+plot(log10(1:(N/2)), log10(pmdev.AR1))
+
+points(log10(AVAR.WN$avarRes$taus),log10(AVAR.WN$avarRes$avars), col = "red")
+
+
+
+### fractional frequency deviates ####
+
+y = rnorm(2048)
+
+##this takes forever using fractional frequency data
+modified_avar_fun <- function(y, m = 1){
   M = length(y)
   mvar=0
   # Outer loop
-  for(j in 1:(M-3*m+2))
-  {
+  for(j in 1:(M-3*m+2)){
+    
+    #print(paste("j = ", j))
+    s = 0
     # First Inner loop
-    for(i in j:(j+m-1))
-    {
+    for(i in j:(j+m-1)){
+      
+      #print(paste("i = ", i))
       #Second Inner loop
       for(k in i:(i + m - 1)){
+        
+        #print(paste("k = ", k))
         s = s + y[k + m] - y[k]
       }
+      
     }
     mvar=mvar+s^2
   }
+  
   # Scaling
-  mvar=mvar/(2*m^2*m^2*tau^2*(N-3*m+1))
-  return (sqrt(mvar))
+  mvar=mvar/(2*m^4*(M-3*m+2))
+  return (mvar)
 }
+
+test.modifiedAVAR <- rep(NA, times = 1000)
+
+for(m in c(1:10,15,20,seq(25,500, by = 20))){
+  test.modifiedAVAR[m] <-  modified_avar_fun(y,m = m)
+    }
+
+plot(log10(1:1000), log10(test.modifiedAVAR))
+points(log10(getAvars(1000, y)$avarRes$avars), col = "red")
+
+
+
+
+
+library(dplyr)
+
+data_list = list()
+
+for(i in 1:100){data_list[[i]] = data.frame("x" = rnorm(1), "y" = runif(1))}
+
+df = bind_rows(data_list)
 
 
 
