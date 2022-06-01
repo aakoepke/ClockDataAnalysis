@@ -227,6 +227,78 @@ points(log10(AVAR.AR1$avarRes$taus), avar_RW_FD_means, pch = 19, col = "blue")
 legend(x = 0, y = -2, legend = c("Theoretical WN", "Estimated", "Mean"), col = c("black", "red", "blue"), lty = c(1,NA,NA),pch = c(NA,1,19), lwd = c(2,1,1))
 
 
+
+
+#######ARFIMA(0,d,0) d < 0.5 ###########
+##Formulae taken from Zhang, 2008
+
+rho_arfima <- function(d,k){
+  return(gamma(1-d)*gamma(k + d)/(gamma(d)*gamma(k + 1 - d)))
+}
+
+
+
+
+##Example: d = 0.25
+d <- 0.49
+ks <- 2:100
+rhos <- rho_arfima(d,ks)
+
+plot(rhos, type = "l")
+
+#check against R package function
+library(arfima)
+
+t1 <- tacvfARFIMA(phi = c(0), theta = 0, dfrac = 0.49, maxlag = 100)
+plot(t1[3:101],type = "l", col = "red")
+
+##these don't match up, and I'm not totally sure why
+
+#this is a function where the homemade rho function is used
+#avar_ARFIMA <- function(tau,d, sig.2.a){
+tau = 90
+d = 0.49
+
+  total <- 0
+  for(i in 1:(tau - 1)){print(total)
+    total = total + i*(2*rho_arfima(d,tau-i) - rho_arfima(d,i) - rho_arfima(d,2*tau-i))}
+  numerator <-(tau*(1 - rho_arfima(d,tau)) + total)*gamma(1-2*d)*sig.2.a
+  denom <- (tau*gamma(1-d))^2
+  return(numerator/denom)
+#}
+
+taus <- 2:100
+
+tavar_ARFIMA <- rep(NA, times = 99)
+
+for(i in 1:100){
+  tavar_ARFIMA[i] <- avar_ARFIMA(i,d,sig.2.a = 1)
+}
+
+plot(2:100, tavar_ARFIMA[2:100], type = "l")
+
+
+#now let's try with the tacvf function in the r package arfima
+
+tavar_ARFIMA <- function(N,d, sig.2.a){
+  rho.vec <- tacvfARFIMA(phi = 0, theta = 0, dfrac = d, maxlag = N)
+  taus <- 2:N
+
+  sum.vec <- rep(NA, times = N-1)
+  for(k in 2:N){
+  total <- 0
+  for(i in 1:(k - 1)){total = total + i*(2*rho.vec[k-i] - rho.vec[i] - rho.vec[2*k-i])}
+  sum.vec[k-1] <- total
+  }
+  numerator <-(taus*(rep(1,times = N-1) - rho.vec[2:N]) + sum.vec)*gamma(1-2*d)*sig.2.a
+  denom <- (taus*gamma(1-d))^2
+  return(numerator/denom)
+}
+
+t1 <- tavar_ARFIMA(N = 100, d = 0.49, sig.2.a = 1)
+
+plot(t1,type = "l")
+
 #####AVAR computation functions #####
 
 #### Regular Allan Variance #####

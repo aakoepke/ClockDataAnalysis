@@ -19,7 +19,6 @@ avar_fn=function(y,tau){
   1/(2*(M-1)) * sum(diff(groupmeans)^2)
 }
 
-
 ########overlapping
 
 overlapping_avar_fn=function(y,m){
