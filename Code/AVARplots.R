@@ -26,24 +26,79 @@ avar_WN <- function(N,sigma.2){
   return(sigma.2/taus)
 }
 
+#theoretical confidence bounds:
+avar_CI <- function(y,CI.level,noise_type = "white noise", avar_type, len){
+  M <- len
+  N <- length(y) + 1
+  s.2 <- rep(NA, times = M)
+  a <- (1-CI.level)/2
+  
+  if(avar_type == "overlapping"){
+  for(k in 1:(M)){
+    s.2[k] <- overlapping_avar_fn(y,m = k)
+  }
+  }
+  if(avar_type == "regular"){
+    for(k in 1:(M)){
+    s.2[k] <- avar_fn(y,tau = k)
+    }
+  }
+  
+  if(avar_type == "theoretical W FM"){
+      s.2 <- avar_WN(N,1)[1:M]
+  }
+  
+  edf <- rep(NA, times = M)
+  
+  if(noise_type == "white noise"){
+    for(i in 1:(M)){
+      edf[i] <- ((3*(N-1)/(2*i)) - (2*(N-2)/N))*(4*i^2)/(4*i^2 + 5)
+    }
+  }
+  
+  if(avar_type == "regular"){
+    CI.limits <- bind_rows("lower" = s.2 - s.2/N, "upper" = s.2 +  s.2/N)
+  }
+  else{
+  CI.limits <- bind_rows("lower" = s.2*edf/qchisq(1-a,edf),"upper" = s.2*edf/qchisq(a, edf) )
+  }
+  return(CI.limits)
+}
+
+N = 4096
+y <- rnorm(N)
+#use the means of overlapping avar for WN to create bounds
+y <- oavar_WN_means
+test <- avar_CI(y,CI.level = 0.90, noise_type = "white noise", avar_type = "theoretical W FM", len = 300)
+test2 <- avar_CI(y,CI.level = 0.90, noise_type = "white noise", avar_type = "overlapping", len = 300)
+test3 <- avar_CI(y,CI.level = 0.90, noise_type = "white noise", avar_type = "regular", len = 300)
+
+
+plot(log10(seq(1,300, by = 1)), log10(avar_WN(N,1)[1:300]), type = "l", lwd = 2, ylab = "log10(AVAR)", xlab = "log10(tau)", main = "Theoretical AVAR vs. 100 Simulations for WN(0,1) Process")
+lines(log10(1:300), log10(test$lower), lty = 2)
+lines(log10(1:300), log10(test$upper), lty = 2)
+lines(log10(1:300), log10(test2$lower), lty = 2, col = "red") #overlapping 
+lines(log10(1:300), log10(test2$upper), lty = 2, col = "red") #overlapping
+#lines(log10(1:300), log10(test3$lower), lty = 2, col = "blue") #regular?
+#lines(log10(1:300), log10(test3$upper), lty = 2, col = "blue") #regular?
 
 ##look at a bunch of simulations
 avar_saved_WN <- matrix(NA, nrow = 100, ncol = 214)
+ms <- c(1:10,15,20,seq(25,N/2, by = 50))
+oavar_saved_WN <- matrix(NA, nrow = 100, ncol = length(ms))
 modavar_saved_WNPM <- matrix(NA, nrow = 100, ncol = 80)
-ms <- c(1:10,15,20,seq(25,floor(N/3), by = 20))
-pmavar.WN <- rep(NA, times = length(ms))
+oavar.WN <- rep(NA, times = length(ms))
 
 for(i in 1:100){
   set.seed(i)
-  x <- rnorm(N)
+  y <- rnorm(N)
   #x <- diffinv(y)
   
   for(k in 1:length(ms)){
     print(k)
-    pmavar.WN[k] <- pmavar(x,tau = 1, m = ms[k])
+    oavar.WN[k] <- overlapping_avar_fn(y,m = ms[k])
   }
-  
-  modavar_saved_WNPM[i,] <-  pmavar.WN   # original avar: getAvars(N,y)$avarRes$avars
+  oavar_saved_WN[i,] <-  oavar.WN   # original avar: getAvars(N,y)$avarRes$avars
   #avar_saved_WN[i,] <- getAvars(N,y)$avarRes$avars
 }
 
@@ -62,8 +117,13 @@ points(log10(AVAR.WN$avarRes$taus), avar_WN_means, pch = 19, col = "blue")
 modavar_WNPM_means <- apply(log10(modavar_saved_WNPM), MARGIN = 2, FUN = "mean")
 points(log10(ms),modavar_WNPM_means, pch = 19, col = "dark green")
 
+oavar_WN_means <- apply(log10(oavar_saved_WN), MARGIN = 2, FUN = "mean")
+points(log10(ms),oavar_WN_means, pch = 19, col = "dark green")
 
-legend(x = 0, y = -1, legend = c("Theoretical", "Estimated", "Mean"), col = c("black", "red", "blue"), lty = c(1,NA,NA),pch = c(NA,1,19), lwd = c(2,1,1))
+legend(x = 2.5, y =0, legend = c("Theoretical", "AVAR", "OAVAR"), col = c("black", "blue", "dark green"), lty = c(1,NA,NA),pch = c(NA,19,19), lwd = c(2,1,1))
+
+
+
 
 #difference in mean to theoretical
 diffs <- log10(avar_WN(N,1)[AVAR.WN$avarRes$taus])- avar_WN_means
@@ -93,14 +153,22 @@ lines(log(seq(1,N/2, by = 1)), log(av_ar1(seq(1,N/2, by = 1),phi, 1)), col = "gr
 
 
 ## look at a bunch of simulations
-
-avar_saved_AR1 <- matrix(NA, nrow = 100, ncol = 112)
+taus = c(1:10,15,20,seq(30,N/2,by=10)) #taus from getAvars function
+avar_saved_AR1 <- matrix(NA, nrow = 100, ncol = 214)
+oavar_saved_AR1 <- matrix(NA, nrow = 100, ncol = 214)
+oavar.AR1 <- rep(NA, times = length(taus))
 
 for(i in 1:100){
   set.seed(i)
+  print(i)
   y <- arima.sim(n = N, list(ar = c(0.5)))
   
   avar_saved_AR1[i,] <- getAvars(N,y)$avarRes$avars
+  
+  for(k in 1:length(taus)){
+    oavar.AR1[k] <- overlapping_avar_fn(y, m = taus[k])
+  }
+  oavar_saved_AR1[i,] <- oavar.AR1
 }
 
 colors = rainbow(100)
@@ -237,67 +305,62 @@ rho_arfima <- function(d,k){
 }
 
 
-
+rho_arfima(d = 0.25, k = 100)
 
 ##Example: d = 0.25
-d <- 0.49
+d <- 0.25
 ks <- 2:100
 rhos <- rho_arfima(d,ks)
 
-plot(rhos, type = "l")
+lines(16.36028*rhos, type = "l")
 
 #check against R package function
 library(arfima)
 
-t1 <- tacvfARFIMA(phi = c(0), theta = 0, dfrac = 0.49, maxlag = 100)
-plot(t1[3:101],type = "l", col = "red")
+t1 <- tacvfARFIMA(phi = c(0), theta = 0, dfrac = d, maxlag = 200)
+plot(t1/max(t1),type = "l", col = "red")
 
 ##these don't match up, and I'm not totally sure why
 
-#this is a function where the homemade rho function is used
-#avar_ARFIMA <- function(tau,d, sig.2.a){
-tau = 90
-d = 0.49
+###trying another package to see what it does
+install.packages("afmtools")
 
+#this is a function where the homemade rho function is used -- I don't think this is the best way because it turns into NaNs
+avar_ARFIMA <- function(tau,d, sig.2.a){
   total <- 0
-  for(i in 1:(tau - 1)){print(total)
+  for(i in 2:(tau - 1)){print(total)
     total = total + i*(2*rho_arfima(d,tau-i) - rho_arfima(d,i) - rho_arfima(d,2*tau-i))}
   numerator <-(tau*(1 - rho_arfima(d,tau)) + total)*gamma(1-2*d)*sig.2.a
   denom <- (tau*gamma(1-d))^2
   return(numerator/denom)
-#}
-
-taus <- 2:100
-
-tavar_ARFIMA <- rep(NA, times = 99)
-
-for(i in 1:100){
-  tavar_ARFIMA[i] <- avar_ARFIMA(i,d,sig.2.a = 1)
 }
-
-plot(2:100, tavar_ARFIMA[2:100], type = "l")
 
 
 #now let's try with the tacvf function in the r package arfima
 
-tavar_ARFIMA <- function(N,d, sig.2.a){
-  rho.vec <- tacvfARFIMA(phi = 0, theta = 0, dfrac = d, maxlag = N)
+#tavar_ARFIMA <- function(N,d, sig.2.a){
+  rho.vec <- tacvfARFIMA(phi = 0, theta = 0, dfrac = d, maxlag = 2*N)
+  corr.vec <- rho.vec/max(rho.vec) #normalize
   taus <- 2:N
 
   sum.vec <- rep(NA, times = N-1)
   for(k in 2:N){
-  total <- 0
-  for(i in 1:(k - 1)){total = total + i*(2*rho.vec[k-i] - rho.vec[i] - rho.vec[2*k-i])}
-  sum.vec[k-1] <- total
-  }
-  numerator <-(taus*(rep(1,times = N-1) - rho.vec[2:N]) + sum.vec)*gamma(1-2*d)*sig.2.a
+    print(k)
+    total <- 0
+    for(i in 1:(k - 1)){
+      print(i) 
+      total = total + i*(2*corr.vec[k-i + 1] - corr.vec[i + 1] - corr.vec[2*k-i + 1])
+      }
+      sum.vec[k-1] <- total
+    }
+  numerator <-(taus*(rep(corr.vec[1],times = N-1) - corr.vec[2:N]) + sum.vec)*gamma(1-2*d)
   denom <- (taus*gamma(1-d))^2
   return(numerator/denom)
-}
+#}
 
 t1 <- tavar_ARFIMA(N = 100, d = 0.49, sig.2.a = 1)
 
-plot(t1,type = "l")
+plot(numerator/denom,type = "l")
 
 #####AVAR computation functions #####
 
