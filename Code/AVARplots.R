@@ -300,45 +300,11 @@ legend(x = 0, y = -2, legend = c("Theoretical WN", "Estimated", "Mean"), col = c
 #######ARFIMA(0,d,0) d < 0.5 ###########
 ##Formulae taken from Zhang, 2008
 
-rho_arfima <- function(d,k){
-  return(gamma(1-d)*gamma(k + d)/(gamma(d)*gamma(k + 1 - d)))
-}
 
-
-rho_arfima(d = 0.25, k = 100)
-
-##Example: d = 0.25
-d <- 0.25
-ks <- 2:100
-rhos <- rho_arfima(d,ks)
-
-lines(16.36028*rhos, type = "l")
-
-#check against R package function
+#use R package function for the theoretical acvf of ARFIMA
 library(arfima)
 
-t1 <- tacvfARFIMA(phi = c(0), theta = 0, dfrac = d, maxlag = 200)
-plot(t1/max(t1),type = "l", col = "red")
-
-##these don't match up, and I'm not totally sure why
-
-###trying another package to see what it does
-install.packages("afmtools")
-
-#this is a function where the homemade rho function is used -- I don't think this is the best way because it turns into NaNs
-avar_ARFIMA <- function(tau,d, sig.2.a){
-  total <- 0
-  for(i in 2:(tau - 1)){print(total)
-    total = total + i*(2*rho_arfima(d,tau-i) - rho_arfima(d,i) - rho_arfima(d,2*tau-i))}
-  numerator <-(tau*(1 - rho_arfima(d,tau)) + total)*gamma(1-2*d)*sig.2.a
-  denom <- (tau*gamma(1-d))^2
-  return(numerator/denom)
-}
-
-
-#now let's try with the tacvf function in the r package arfima
-
-#tavar_ARFIMA <- function(N,d, sig.2.a){
+tavar_ARFIMA <- function(N,d, sig.2.a){
   rho.vec <- tacvfARFIMA(phi = 0, theta = 0, dfrac = d, maxlag = 2*N)
   corr.vec <- rho.vec/max(rho.vec) #normalize
   taus <- 2:N
@@ -353,14 +319,51 @@ avar_ARFIMA <- function(tau,d, sig.2.a){
       }
       sum.vec[k-1] <- total
     }
-  numerator <-(taus*(rep(corr.vec[1],times = N-1) - corr.vec[2:N]) + sum.vec)*gamma(1-2*d)
+  numerator <-(taus*(rep(corr.vec[1],times = N-1) - corr.vec[3:(N+1)]) + sum.vec)*gamma(1-2*d)
   denom <- (taus*gamma(1-d))^2
   return(numerator/denom)
-#}
+}
 
-t1 <- tavar_ARFIMA(N = 100, d = 0.49, sig.2.a = 1)
+t1 <- tavar_ARFIMA(N = N/2, d = 0.49, sig.2.a = 1)
+t2 <- tavar_ARFIMA(N = N/2, d = 0.25, sig.2.a = 1)
 
-plot(numerator/denom,type = "l")
+plot(t1,type = "l", ylim = c(0,2))
+lines(t2,lty = 2, col = "red")
+
+#checking out to what it should look like for ARFIMA(0,0.49,0) and ARFIMA(0,0.25,0), good
+
+####Multiple Simulation Experiment ARFIMA(0,0.25,0), ARFIMA(0,0.49,0)
+
+d <- 0.49
+N = 4096
+avar_saved_ARFIMA_49 <- matrix(NA, nrow = 100, ncol = 214)
+
+for(i in 1:100){
+  set.seed(i)
+  y <- arfima.sim(N,model = list(dfrac = d))
+  
+  avar_saved_ARFIMA_49[i,] <- getAvars(N,y)$avarRes$avars
+}
+
+
+plot(log10(seq(2,N/2-1, by = 1)), log10(t1[2:length(t1)]),ylim = c(-2,0.2), type = "l", lwd = 2,ylab = "log10(AVAR)", xlab = "log10(tau)", main = "Theoretical AVAR vs. 100 Simulations for \n ARFIMA(0,0.49,0)")
+
+for(i in 1:100){
+  points(log10(AVAR.AR1$avarRes$taus), log10(avar_saved_ARFIMA_49[i,]),col = "red")
+}
+lines(log10(seq(2,N/2-1, by = 1)), log10(t1[2:length(t1)]),ylim = c(-6,1), type = "l", lwd = 2,ylab = "log10(AVAR)", xlab = "log10(tau)", main = "Theoretical AVAR vs. 100 Simulations for ARFIMA(0,0.25,0)")
+
+#Show averages for each tau
+avar_ARFIMA_means_49 <- apply(log10(avar_saved_ARFIMA_49), MARGIN = 2, FUN = "mean")
+
+points(log10(AVAR.AR1$avarRes$taus), avar_ARFIMA_means_49, pch = 19, col = "blue")
+
+legend(x = 0, y = -2, legend = c("Theoretical", "Estimated", "Mean"), col = c("black", "red", "blue"), lty = c(1,NA,NA),pch = c(NA,1,19), lwd = c(2,1,1))
+
+
+
+
+
 
 #####AVAR computation functions #####
 
