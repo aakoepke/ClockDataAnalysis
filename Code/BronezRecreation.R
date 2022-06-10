@@ -101,9 +101,7 @@ R.b[row(R.b) == col(R.b)] <- 1
 top.eight <- matrix(NA, nrow = length(f.c), ncol = 8)
 
 for(i in 1:length(f.c)){
-  b <- f.c[i] + f.w
-  a <- f.c[i] - f.w
-  R.a <- (1/(pi*dist.mat))*(cos(dist.mat*f.c[i])*sin(dist.mat*f.w)-j*(sin(dist.mat*f.c[i])*sin(dist.mat*f.w)))
+  R.a <- (1/(2*pi*j*dist.mat))*(exp(j*(f.c[i] + f.w)*dist.mat) - exp(j*(f.c[i] - f.w)*dist.mat))
   R.a[row(R.a) == col(R.a)] <- 0.05/(pi)
   R.a[upper.tri(R.a)] <- Conj(R.a[upper.tri(R.a)])
   
@@ -111,7 +109,7 @@ for(i in 1:length(f.c)){
   evs <- geigen(R.a,R.b, symmetric = TRUE)
   lambdas <- sort(evs$values, decreasing = TRUE)
   
-  top.eight[i,] <- lambdas[1:8]+ 0.08407028
+  top.eight[i,] <- lambdas[1:8]
   
 }
 
