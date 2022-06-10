@@ -3,6 +3,10 @@
 ##  for calculating weighting sequences for irregularly spaced data ###
 #######################################################################
 
+#### Libraries #####
+
+library(fields)
+library(geigen)
 
 #####################     GPSS Method: Chart 1, p. 45     ###############################
 ## Steps:                                                                              ##
@@ -16,31 +20,36 @@
 ##  7. Calculate the integrated spectrum estimate: P.A = sum_{k = 1}^{k} |w.k * x.t|^2 ##
 #########################################################################################
 
-#### Example 1: Regularly Spaced Data  ####
+#### Recreating Bronez ideas ####
+j <- complex(real = 0, imaginary = 1) #used as imaginary i in this dissertation
 
-t.n <- 1:50
 
-j <- complex(real = 0, imaginary = 1)
+n <- t.n <- 1:50 #regularly spaced data
+t.n <- 0.625 + 0.3625*n + 0.0125*n^2 #arithmetically spaced data
+m <- 1:60
+t.m <- 5*m/6
+t.n <- t.m[-c(1,5,17,18,23,27,32,39,53,56)] #missing data
+
+
 
 #sampling kernel: K(w) = sum_{k = 1}^{N} exp(-j*w*t.n)
-L <-  40
-w <- seq(-1,1, length.out = L)
+L <-  5000
+w <- seq(-pi,pi, length.out = L)
 W <- matrix(w, nrow = length(t.n), ncol = L, byrow = TRUE)
 K.w <- apply(exp(-j*t.n*W), MARGIN = 2, FUN = sum)
 K.w.mag <- abs(K.w)
 length(K.w)
-plot(w,K.w.mag)
+#plot(w,K.w.mag, ylim = c(-80,45), type = "l")
+#lines(w,K.w.mag, ylim = c(-80,45), type = "l", col = "red")
+lines(w,K.w.mag, ylim = c(-80,45), type = "l", col = "blue")
 
 
 #fixed center analysis band A: |f| < f_w for 0 < f < 0.1
-library(fields)
-library(geigen)
 
 f.w <- seq(0,0.1*2*pi,length.out = 41)
 dist.mat <- rdist(t.n)
 
 #B = [-pi,pi]?
-R.b <- 1/(2*pi*j*(dist.mat))*(exp(j*pi*dist.mat) - exp(-j*pi*dist.mat))
 R.b <- 1/(pi*(dist.mat))*(sin(dist.mat*pi))
 R.b[row(R.b) == col(R.b)] <- 1
 
@@ -62,9 +71,6 @@ top.eight[i,] <- lambdas[1:8]
 matplot(f.w/(2*pi),top.eight) 
 
 
-#what is going on with the f.w's? Why can't I get the same scale as in the paper?
-#maybe it has something to do with 2*pi * f = omega
-
 
 #sidelobe energy
 
@@ -73,13 +79,52 @@ gamma.k <- 10*log10(1-top.eight)
 matplot(f.w/(2*pi),gamma.k, ylim = c(-60,0)) 
 
 
-##Figure 4 Bronez 1985
+##Figure 4/5/6 Bronez 1985
 par(mfrow = c(2,1), mar = c(4,4,3,3))
 
 matplot(f.w/(2*pi),top.eight,lty = 1, ylab = "Eigenvalues", xlab = "f_w", main = "Figure 4") 
 matlines(f.w/(2*pi),top.eight,lty = 1) 
 matplot(f.w/(2*pi),gamma.k, ylim = c(-60,0),ylab = "Sidelobe Energy (dB)", xlab = "f_w") 
 matlines(f.w/(2*pi),gamma.k, ylim = c(-60,0), lty = 1) 
+
+
+#fixed width analysis band A: |f-f_c| < 0.05 for -0.45 < f_c < 0.45
+
+f.c <- seq(-0.45*2*pi,0.45*2*pi,length.out = 41)
+f.w <- 0.05*2*pi
+dist.mat <- rdist(t.n)
+
+#B = [-pi,pi]?
+R.b <- 1/(pi*(dist.mat))*(sin(dist.mat*pi))
+R.b[row(R.b) == col(R.b)] <- 1
+
+top.eight <- matrix(NA, nrow = length(f.c), ncol = 8)
+
+for(i in 1:length(f.c)){
+  b <- f.c[i] + f.w
+  a <- f.c[i] - f.w
+  R.a <- (1/(pi*dist.mat))*(cos(dist.mat*f.c[i])*sin(dist.mat*f.w)-j*(sin(dist.mat*f.c[i])*sin(dist.mat*f.w)))
+  R.a[row(R.a) == col(R.a)] <- 0.05/(pi)
+  R.a[upper.tri(R.a)] <- Conj(R.a[upper.tri(R.a)])
+  
+  #Solve the generalized eigenvalue problem
+  evs <- geigen(R.a,R.b, symmetric = TRUE)
+  lambdas <- sort(evs$values, decreasing = TRUE)
+  
+  top.eight[i,] <- lambdas[1:8]+ 0.08407028
+  
+}
+
+matplot(f.c/(2*pi),top.eight ) 
+
+
+
+#sidelobe energy
+
+gamma.k <- 10*log10(1-top.eight)
+
+matplot(f.c/(2*pi),gamma.k, ylim = c(-70,0)) 
+
 
 
 

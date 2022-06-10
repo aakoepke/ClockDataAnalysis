@@ -323,20 +323,22 @@ tavar_ARFIMA <- function(N,d, sig.2.a){
   denom <- (taus*gamma(1-d))^2
   return(numerator/denom)
 }
-
+N = 2048
 t1 <- tavar_ARFIMA(N = N/2, d = 0.49, sig.2.a = 1)
 t2 <- tavar_ARFIMA(N = N/2, d = 0.25, sig.2.a = 1)
 
-plot(t1,type = "l", ylim = c(0,2))
-lines(t2,lty = 2, col = "red")
+plot(log10(1:1023),log10(t1),type = "l", ylim = c(-2,0))
+lines(log10(1:1023),log10(t2),lty = 2, col = "red")
 
 #checking out to what it should look like for ARFIMA(0,0.49,0) and ARFIMA(0,0.25,0), good
 
 ####Multiple Simulation Experiment ARFIMA(0,0.25,0), ARFIMA(0,0.49,0)
 
 d <- 0.49
-N = 4096
-avar_saved_ARFIMA_49 <- matrix(NA, nrow = 100, ncol = 214)
+N = 2048
+taus = c(1:10,15,20)
+taus = c(taus,seq(30,N/2,by=10)) 
+avar_saved_ARFIMA_49 <- matrix(NA, nrow = 100, ncol = 112)
 
 for(i in 1:100){
   set.seed(i)
@@ -346,19 +348,19 @@ for(i in 1:100){
 }
 
 
-plot(log10(seq(2,N/2-1, by = 1)), log10(t1[2:length(t1)]),ylim = c(-2,0.2), type = "l", lwd = 2,ylab = "log10(AVAR)", xlab = "log10(tau)", main = "Theoretical AVAR vs. 100 Simulations for \n ARFIMA(0,0.49,0)")
+plot(log10(seq(2,length(t1) + 1, by = 1)), log10(t1),ylim = c(-2,0.5), type = "l", lwd = 2,ylab = "log10(AVAR)", xlab = "log10(tau)", main = "Theoretical AVAR vs. 100 Simulations for \n ARFIMA(0,0.49,0)")
 
 for(i in 1:100){
-  points(log10(AVAR.AR1$avarRes$taus), log10(avar_saved_ARFIMA_49[i,]),col = "red")
+  points(log10(taus), log10(avar_saved_ARFIMA_49[i,]),col = "red")
 }
-lines(log10(seq(2,N/2-1, by = 1)), log10(t1[2:length(t1)]),ylim = c(-6,1), type = "l", lwd = 2,ylab = "log10(AVAR)", xlab = "log10(tau)", main = "Theoretical AVAR vs. 100 Simulations for ARFIMA(0,0.25,0)")
+lines(log10(seq(2,length(t1) + 1, by = 1)), log10(t1),ylim = c(-6,1), type = "l", lwd = 2,ylab = "log10(AVAR)", xlab = "log10(tau)", main = "Theoretical AVAR vs. 100 Simulations for ARFIMA(0,0.25,0)")
 
 #Show averages for each tau
 avar_ARFIMA_means_49 <- apply(log10(avar_saved_ARFIMA_49), MARGIN = 2, FUN = "mean")
 
-points(log10(AVAR.AR1$avarRes$taus), avar_ARFIMA_means_49, pch = 19, col = "blue")
+points(log10(taus), avar_ARFIMA_means_49, pch = 19, col = "blue")
 
-legend(x = 0, y = -2, legend = c("Theoretical", "Estimated", "Mean"), col = c("black", "red", "blue"), lty = c(1,NA,NA),pch = c(NA,1,19), lwd = c(2,1,1))
+legend(x = 0.5, y = -1, legend = c("Theoretical", "Estimated", "Mean"), col = c("black", "red", "blue"), lty = c(1,NA,NA),pch = c(NA,1,19), lwd = c(2,1,1))
 
 
 
