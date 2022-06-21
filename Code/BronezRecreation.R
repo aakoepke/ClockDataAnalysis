@@ -27,9 +27,7 @@ j <- complex(real = 0, imaginary = 1) #used as imaginary i in this dissertation
 n <- t.n <- 1:50 #regularly spaced data
 t.n <- 0.625 + 0.3625*n + 0.0125*n^2 #arithmetically spaced data
 m <- 1:60
-t.m <- 5*m/6
-t.n <- t.m[-c(1,5,17,18,23,27,32,39,53,56)] #missing data
-
+t.n <- 5*m[-c(1,5,17,18,23,27,32,39,53,56)]/6 #missing data
 
 
 #sampling kernel: K(w) = sum_{k = 1}^{N} exp(-j*w*t.n)
@@ -76,7 +74,7 @@ matplot(f.w/(2*pi),top.eight)
 
 gamma.k <- 10*log10(1-top.eight)
 
-matplot(f.w/(2*pi),gamma.k, ylim = c(-60,0)) 
+matplot(f.c/(2*pi),gamma.k, ylim = c(-60,0)) 
 
 
 ##Figure 4/5/6 Bronez 1985
@@ -94,16 +92,17 @@ f.c <- seq(-0.45*2*pi,0.45*2*pi,length.out = 41)
 f.w <- 0.05*2*pi
 dist.mat <- rdist(t.n)
 
-#B = [-pi,pi]?
+#B = [-pi,pi] or [-1/2,1/2]?
 R.b <- 1/(pi*(dist.mat))*(sin(dist.mat*pi))
 R.b[row(R.b) == col(R.b)] <- 1
 
 top.eight <- matrix(NA, nrow = length(f.c), ncol = 8)
 
 for(i in 1:length(f.c)){
-  R.a <- (1/(2*pi*j*dist.mat))*(exp(j*(f.c[i] + f.w)*dist.mat) - exp(j*(f.c[i] - f.w)*dist.mat))
-  R.a[row(R.a) == col(R.a)] <- 0.05/(pi)
-  R.a[upper.tri(R.a)] <- Conj(R.a[upper.tri(R.a)])
+  #R.a <- (1/(2*j*pi*dist.mat))*(exp(j*(f.c[i] + f.w)*dist.mat) - exp(j*(f.c[i] - f.w)*dist.mat))
+  R.a <- (j/(2*pi*dist.mat))*(exp(j*(f.c[i] - f.w)*dist.mat) - exp(j*(f.c[i] + f.w)*dist.mat))
+  R.a[row(R.a) == col(R.a)] <- 0.05*(2*pi)/(pi)
+  R.a[upper.tri(R.a)] <- Conj(R.a[lower.tri(R.a)])
   
   #Solve the generalized eigenvalue problem
   evs <- geigen(R.a,R.b, symmetric = TRUE)
@@ -125,6 +124,82 @@ matplot(f.c/(2*pi),gamma.k, ylim = c(-70,0))
 
 
 
+##Figure 7/8/9 Bronez 1985
+par(mfrow = c(2,1), mar = c(4,4,3,3))
+
+matplot(f.c/(2*pi),top.eight,lty = 1, ylab = "Eigenvalues", xlab = "center frequency", main = "Figure 8") 
+matlines(f.c/(2*pi),top.eight,lty = 1) 
+matplot(f.c/(2*pi),gamma.k, ylim = c(-60,0),ylab = "Sidelobe Energy (dB)", xlab = "center frequency") 
+matlines(f.c/(2*pi),gamma.k, ylim = c(-60,0), lty = 1) 
+
+
+#####          Functions                     #####
+### Here we turn the work above into functions ###
+###  which output the best K weighting sequences #
+##################################################
+
+get.weights <- function(t.n = 1:50, K = 1, f.c = 0,f.w){
+  N = length(t.n)
+  dist.mat <- rdist(t.n)
+  
+  #B = [-pi,pi] for omega or [-1/2,1/2] for f
+  R.b <- 1/(pi*(dist.mat))*(sin(dist.mat*pi))
+  R.b[row(R.b) == col(R.b)] <- 1
+  
+  if(f.c != 0){
+  R.a <- (j/(2*pi*dist.mat))*(exp(j*(f.c - f.w)*dist.mat) - exp(j*(f.c + f.w)*dist.mat))
+  R.a[row(R.a) == col(R.a)] <- f.w*(2*pi)/(pi)
+  R.a[upper.tri(R.a)] <- Conj(R.a[lower.tri(R.a)])
+}
+else {
+  R.a <- 1/(pi*(dist.mat))*(sin(dist.mat*f.w))
+  
+  R.a[row(R.a) == col(R.a)] <- f.w/(pi)
+}
+  #Solve the generalized eigenvalue problem
+  evs <- geigen(R.a,R.b, symmetric = TRUE)
+  
+  return(list("weights" = evs$vectors[,(N-K + 1):N], "eigenvalues" = sort(evs$values, decreasing = TRUE)[1:K]))
+  
+}
+
+
+##Example 1: best weighting sequence for regularly spaced data
+#(Figures 10 + 11)
+#f_c = 0, f_w = 0.05
+fig10 <- get.weights(f.w = 0.05*2*pi)
+plot(1:50,0.1*abs(fig10$weights)^2, ylim = c(0,0.01))
+
+
+plot(seq(0,1, length.out = length(fig10$weights)),abs(fft(fig10$weights)), type = "l")
+
+
+
+#f_c = -0.3, f_w = 0.05
+fig11 <- get.weights(f.w = 0.05*2*pi, f.c = -0.3*2*pi)
+plot(1:50,0.1*abs(fig11$weights)^2, ylim = c(0,0.01))
+
+plot(seq(0,1, length.out = length(fig11$weights)),abs(fft(fig11$weights)), type = "l")
+abline(v = 0.7)
+
+
+##Example 2: best weighting sequence for arithmetically spaced data
+#(Figures 12 + 13)
+#f_c = 0, f_w = 0.05
+fig12 <- get.weights(t.n = t.n, f.w = 0.05*2*pi)
+plot(t.n,0.1*abs(fig12$weights)^2, ylim = c(0,0.01))
+
+
+plot(seq(0,1, length.out = length(fig12$weights)),abs(fft(fig12$weights)), type = "l")
+
+
+
+#f_c = -0.3, f_w = 0.05
+fig11 <- get.weights(f.w = 0.05*2*pi, f.c = -0.3*2*pi)
+plot(1:50,0.1*abs(fig11$weights)^2, ylim = c(0,0.01))
+
+plot(seq(0,1, length.out = length(fig11$weights)),abs(fft(fig11$weights)), type = "l")
+abline(v = 0.7)
 
 
 
