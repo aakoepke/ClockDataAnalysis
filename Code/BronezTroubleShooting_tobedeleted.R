@@ -1,24 +1,20 @@
-###what's going on with the changing of the f center?
+###What's going on with the weighting sequences plots?
 
-top.eight <- matrix(NA, nrow = length(f.c), ncol = 8)
+i = 21 #0.05 width, center 0, arithmetic sampling
 
-for(i in 1:length(f.c)){
-  R.a <- 1/(pi*(dist.mat))*(sin(dist.mat*f.w))
-  
-  R.a[row(R.a) == col(R.a)] <- f.w/(pi)
-  
-  #Solve the generalized eigenvalue problem
-  evs <- geigen(R.a,R.b, symmetric = TRUE)
-  lambdas <- sort(evs$values, decreasing = TRUE)
-  
-  top.eight[i,] <- lambdas[1:8]
-  
-}
+R.a <- 1/(pi*(dist.mat))*(sin(dist.mat*f.w[i]))
 
-matplot(f.c/(2*pi),top.eight) 
-top.eight
+R.a[row(R.a) == col(R.a)] <- f.w[i]/pi
+
+#Solve the generalized eigenvalue problem
+evs <- geigen(R.a,R.b, symmetric = TRUE)
+lambdas <- sort(evs$values, decreasing = TRUE)
 
 
+Conj(t(evs$vectors[,50]))%*%R.b%*%evs$vectors[,50] #=1
+#so multiply the vector by sqrt(0.05/(pi))
+evec.test <- sqrt(0.05/pi)*evs$vectors[,50]
+plot(1:50,abs(evec.test))
 
 ####### Chave 2019 Paper #######
 

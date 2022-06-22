@@ -101,7 +101,7 @@ top.eight <- matrix(NA, nrow = length(f.c), ncol = 8)
 for(i in 1:length(f.c)){
   #R.a <- (1/(2*j*pi*dist.mat))*(exp(j*(f.c[i] + f.w)*dist.mat) - exp(j*(f.c[i] - f.w)*dist.mat))
   R.a <- (j/(2*pi*dist.mat))*(exp(j*(f.c[i] - f.w)*dist.mat) - exp(j*(f.c[i] + f.w)*dist.mat))
-  R.a[row(R.a) == col(R.a)] <- 0.05*(2*pi)/(pi)
+  R.a[row(R.a) == col(R.a)] <- f.w/(pi)
   R.a[upper.tri(R.a)] <- Conj(R.a[lower.tri(R.a)])
   
   #Solve the generalized eigenvalue problem
@@ -187,7 +187,7 @@ abline(v = 0.7)
 #(Figures 12 + 13)
 #f_c = 0, f_w = 0.05
 fig12 <- get.weights(t.n = t.n, f.w = 0.05*2*pi)
-plot(t.n,0.1*abs(fig12$weights)^2, ylim = c(0,0.01))
+plot(t.n,0.1*abs(fig12$weights)^2/pi,ylim = c(0,0.01),type = "h")
 
 
 plot(seq(0,1, length.out = length(fig12$weights)),abs(fft(fig12$weights)), type = "l")
@@ -195,11 +195,10 @@ plot(seq(0,1, length.out = length(fig12$weights)),abs(fft(fig12$weights)), type 
 
 
 #f_c = -0.3, f_w = 0.05
-fig11 <- get.weights(f.w = 0.05*2*pi, f.c = -0.3*2*pi)
-plot(1:50,0.1*abs(fig11$weights)^2, ylim = c(0,0.01))
+fig13 <- get.weights(f.w = 0.05*2*pi, f.c = -0.3*2*pi, t.n = t.n)
+plot(1:50,0.1*abs(fig13$weights),ylim = c(0,0.05))
 
-plot(seq(0,1, length.out = length(fig11$weights)),abs(fft(fig11$weights)), type = "l")
+plot(seq(0,1, length.out = length(fig13$weights)),abs(fft(fig13$weights)), type = "l")
 abline(v = 0.7)
-
 
 
