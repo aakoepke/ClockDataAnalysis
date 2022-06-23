@@ -16,15 +16,4 @@ Conj(t(evs$vectors[,50]))%*%R.b%*%evs$vectors[,50] #=1
 evec.test <- sqrt(0.05/pi)*evs$vectors[,50]
 plot(1:50,abs(evec.test))
 
-####### Chave 2019 Paper #######
-
-f.seq <- seq(-0.45,0.45,by = 0.05)
-#R.a.prime 
-
-
-R.a.prime <- (1/(pi*dist.mat))*sin(2*pi*dist.mat*0.05)
-
-R.b.prime <- exp(-j*2*pi*f.seq[i]*dist.mat)*(1/(pi*dist.mat))*sin(2*pi*dist.mat)
-
-
 

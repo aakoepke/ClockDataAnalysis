@@ -7,7 +7,7 @@
 
 library(fields)
 library(geigen)
-
+library(RSpectra)
 #####################     GPSS Method: Chart 1, p. 45     ###############################
 ## Steps:                                                                              ##
 ##  1. Get sample times t.n and process values x.t                                     ##
