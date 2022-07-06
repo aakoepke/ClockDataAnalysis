@@ -1,5 +1,5 @@
 ##### Chave 2019 ####
-
+library(multitaper)
 
 #time sequence with gaps
 t.n <- 1:14500
@@ -13,28 +13,42 @@ eigdec <- eigs_sym(A.prime, k = 15, which = "LM")
 
 eigdec <- eigen(A.prime, symmetric = TRUE)
 
-##from matlab:vk.mat
+##from matlab:vk.mat, uk.mat
 uk.mat <- readMat("C:/Users/cmb15/OneDrive - UCB-O365/NIST/ClockDataAnalysis/Data/uk.mat")
 dim(uk.mat$u)
 
+
+### Fig 1
 colors = c("blue", "red", "green", "magenta", "cyan")
-k = 1
-s = 6
+k = 0
+s = 1
 mdss1 <- uk.mat$u[,s]#eigdec$vectors[,s]
 mdss1_long <- c(mdss1[1:4744],rep(0,times = 5447-4745 + 1), mdss1[4745:(4745+8378-5447-1)],rep(0,times = 9545-8378 + 1), mdss1[7676:(7676 + 12823-9545-1)],rep(0,times = 13051-12823+1),mdss1[10954:length(mdss1)])
 #p <- sqrt(sum(mdss1))
 plot(mdss1_long,type = "l",ylim = c(-0.03,0.03),col = colors[1]) #sign(sum(mdss1))*
 
-for(i in 7:10){
+for(i in 2:5){
   mdss1 <- uk.mat$u[,i]#eigdec$vectors[,i]
   mdss1_long <- c(mdss1[1:4744],rep(0,times = 5447-4745 + 1), mdss1[4745:(4745+8378-5447-1)],rep(0,times = 9545-8378 + 1), mdss1[7676:(7676 + 12823-9545-1)],rep(0,times = 13051-12823+1),mdss1[10954:length(mdss1)])
   lines(mdss1_long,type = "l",col = colors[i-5*k])
   
 }
 
+### Fig 3
 
-mdss1 <- eigdec$vectors[,6]
-mdss1_long <- c(mdss1[1:4744],rep(0,times = 5447-4745 + 1), mdss1[4745:(4745+8378-5447-1)],rep(0,times = 9545-8378 + 1), mdss1[7676:(7676 + 12823-9545-1)],rep(0,times = 13051-12823+1),mdss1[10954:length(mdss1)])
-plot(mdss1_long,type = "l", ylim = c(-0.2,0.2))
-abline(v = 4745)
-abline(v = 5447)
+u.mat <- t(uk.mat$u)
+dim(u.mat)
+
+energy.conc <- apply(u.mat^2, FUN = sum, MARGIN = 2)
+length(energy.conc)
+energy.conc_long <- c(energy.conc[1:4744],rep(0,times = 5447-4745 + 1), energy.conc[4745:(4745+8378-5447-1)],rep(0,times = 9545-8378 + 1), energy.conc[7676:(7676 + 12823-9545-1)],rep(0,times = 13051-12823+1),energy.conc[10954:length(energy.conc)])
+plot(energy.conc_long,type = "l",col = colors[1])
+
+
+### OSS
+OSS <- dpss(14500,15,nw=12)
+oss.mat <- t(OSS$v)
+matplot(OSS$v)
+energy.conc.OSS <- apply(oss.mat^2, FUN = sum, MARGIN = 2)
+length(energy.conc.OSS)
+lines(energy.conc.OSS,type = "l",col = "red")
