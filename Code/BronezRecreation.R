@@ -4,7 +4,7 @@
 #######################################################################
 
 #### Libraries #####
-
+library(tidyverse)
 library(fields)
 library(geigen)
 library(RSpectra)
@@ -39,7 +39,7 @@ K.w.mag <- abs(K.w)
 length(K.w)
 #plot(w,K.w.mag, ylim = c(-80,45), type = "l")
 #lines(w,K.w.mag, ylim = c(-80,45), type = "l", col = "red")
-lines(w,K.w.mag, ylim = c(-80,45), type = "l", col = "blue")
+lines(w,K.w.mag, ylim = c(-80,45), type = "l", col = "bslue")
 
 
 #fixed center analysis band A: |f| < f_w for 0 < f < 0.1
@@ -168,7 +168,7 @@ else {
 #(Figures 10 + 11)
 #f_c = 0, f_w = 0.05
 fig10 <- get.weights(f.w = 0.05*2*pi)
-plot(1:50,0.1*abs(fig10$weights)^2, ylim = c(0,0.01))
+plot(1:50,0.1*abs(fig10$weights)^2, ylim = c(0,0.01), type = "h")
 
 
 plot(seq(0,1, length.out = length(fig10$weights)),abs(fft(fig10$weights)), type = "l")
@@ -177,9 +177,9 @@ plot(seq(0,1, length.out = length(fig10$weights)),abs(fft(fig10$weights)), type 
 
 #f_c = -0.3, f_w = 0.05
 fig11 <- get.weights(f.w = 0.05*2*pi, f.c = -0.3*2*pi)
-plot(1:50,0.1*abs(fig11$weights)^2, ylim = c(0,0.01))
+plot(1:50,0.1*abs(fig11$weights)^2, ylim = c(0,0.01), type = "h")
 
-plot(seq(0,1, length.out = length(fig11$weights)),abs(fft(fig11$weights)), type = "l")
+plot(seq(0,1, length.out = length(fig11$weights)),abs(fft(fig11$weights)), type = "h")
 abline(v = 0.7)
 
 
@@ -196,7 +196,7 @@ plot(seq(0,1, length.out = length(fig12$weights)),abs(fft(fig12$weights)), type 
 
 #f_c = -0.3, f_w = 0.05
 fig13 <- get.weights(f.w = 0.05*2*pi, f.c = -0.3*2*pi, t.n = t.n)
-plot(1:50,0.1*abs(fig13$weights),ylim = c(0,0.05))
+plot(1:50,0.1*abs(fig13$weights),ylim = c(0,0.05), type = "h")
 
 plot(seq(0,1, length.out = length(fig13$weights)),abs(fft(fig13$weights)), type = "l")
 abline(v = 0.7)
