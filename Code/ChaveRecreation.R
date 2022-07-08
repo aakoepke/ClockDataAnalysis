@@ -13,6 +13,24 @@ eigdec <- eigs_sym(A.prime, k = 15, which = "LM")
 
 eigdec <- eigen(A.prime, symmetric = TRUE)
 
+##changing signs of the vectors
+K = 15 #number of sequences we want
+eig_vecs <- eigdec$vectors[,1:K] #get only those vectors
+for(i in seq(1,K,by = 2)){
+  if (mean(Re(eig_vecs[,i]))<0){
+    eig_vecs[,i] <- -eig_vecs[,i]
+  }
+}
+
+for(i in seq(2,K-1,by = 2)){
+  if (Re(eig_vecs[2,i] - eig_vecs[1,i])<0){
+    eig_vecs[,i] <- -eig_vecs[,i]
+  }
+}
+
+
+
+
 ##from matlab:vk.mat, uk.mat
 uk.mat <- readMat("C:/Users/cmb15/OneDrive - UCB-O365/NIST/ClockDataAnalysis/Data/uk.mat")
 dim(uk.mat$u)
@@ -20,15 +38,15 @@ dim(uk.mat$u)
 
 ### Fig 1
 colors = c("blue", "red", "green", "magenta", "cyan")
-k = 0
-s = 1
-mdss1 <- uk.mat$u[,s]#eigdec$vectors[,s]
+k = 2
+s = 11
+mdss1 <- eig_vecs[,s] #uk.mat$u[,s]#
 mdss1_long <- c(mdss1[1:4744],rep(0,times = 5447-4745 + 1), mdss1[4745:(4745+8378-5447-1)],rep(0,times = 9545-8378 + 1), mdss1[7676:(7676 + 12823-9545-1)],rep(0,times = 13051-12823+1),mdss1[10954:length(mdss1)])
 #p <- sqrt(sum(mdss1))
 plot(mdss1_long,type = "l",ylim = c(-0.03,0.03),col = colors[1]) #sign(sum(mdss1))*
 
-for(i in 2:5){
-  mdss1 <- uk.mat$u[,i]#eigdec$vectors[,i]
+for(i in 12:15){
+  mdss1 <- eig_vecs[,i] #uk.mat$u[,i]#
   mdss1_long <- c(mdss1[1:4744],rep(0,times = 5447-4745 + 1), mdss1[4745:(4745+8378-5447-1)],rep(0,times = 9545-8378 + 1), mdss1[7676:(7676 + 12823-9545-1)],rep(0,times = 13051-12823+1),mdss1[10954:length(mdss1)])
   lines(mdss1_long,type = "l",col = colors[i-5*k])
   
