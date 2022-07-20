@@ -304,7 +304,7 @@ legend(x = 0, y = -2, legend = c("Theoretical WN", "Estimated", "Mean"), col = c
 #use R package function for the theoretical acvf of ARFIMA
 library(arfima)
 
-tavar_ARFIMA <- function(N,d, sig.2.a){
+arfima.sim(N,model = list(dfrac = d))tavar_ARFIMA <- function(N,d, sig.2.a){
   rho.vec <- tacvfARFIMA(phi = 0, theta = 0, dfrac = d, maxlag = 2*N)
   corr.vec <- rho.vec/max(rho.vec) #normalize
   taus <- 2:N

@@ -1,0 +1,68 @@
+---
+title: "Multitaper Spectral Analysis on Data with Dead Time"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(arfima)
+```
+
+## The Data
+
+First we show an example of data generated from an ARFIMA(0,d,0) process with d = 0.4.
+
+This process follows:
+
+$$\nabla^d X_t = \epsilon_t$$
+
+
+where we let $d = 0.4$ and $var\{\epsilon_t\} = 1$.
+
+```{r, echo = FALSE}
+N <- 128
+d <- 0.4
+X.t <- arfima.sim(N,model = list(dfrac = d))
+
+plot(X.t,type = "l", main = "Full Data", ylab = "X(t)", xlab = "t")
+
+```
+
+## Mutltitaper Spectral Estimate (MTSE)
+
+We find the MTSE of this data:
+
+```{r echo=FALSE}
+f.nyquist <- 1/2
+N.prime <- N
+f.j.prime <- seq(0,f.nyquist, length.out = N.prime/2 + 1)
+X.tilde.prime <- X.t
+
+t <- 0:(N.prime-1)
+S.x.hat <- rep(NA, times = N.prime/2 + 1) #where S_x.hat(f'_j) will be saved
+
+for(j in 0:N.prime/2){
+  k.vec <- rep(NA,times = 6)
+  for(k in 0:5){
+    W.t <- h.k.prime(k = k, N=N, N.prime = N.prime)*X.tilde.prime
+    inner.sum <- sum(W.t*exp(-complex(real = 0, imaginary = 1)*2*pi*t*j/N.prime))
+    k.vec[k + 1] <- abs(inner.sum)^2
+  }
+  S.x.hat[j] <- (1/length(k.vec))*sum(k.vec)
+}
+
+plot(log10(f.j.prime), log10(S.x.hat), type = "l") #plot of multitaper spectral estimator
+
+```
+
+## Analysis of this Estimator
+
+In clock frequency stability analysis typically physicists will assume a certain power law process and then do analysis based on that assumption. We happen to know this data came from a power law process with spectrum XXXX, so we use this to our advantage to test this assumption using the MTSE.
+
+
+
+
+
+
+

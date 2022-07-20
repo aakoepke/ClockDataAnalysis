@@ -8,7 +8,7 @@ library(purrr) #discrete uniform dist.
 #create data
 set.seed(11)
 N <-  2048
-X.t <- X.t_missing <-  rnorm(N)
+X.t <- X.t_missing <-  rnorm(N, mean = 0, sd = 3)
 #create data with gaps
 endpoints <- sort(rdunif(4,2048,1))
 X.t_missing[c(endpoints[1]:endpoints[2], endpoints[3]:endpoints[4])] <- NA
@@ -27,7 +27,7 @@ plot(X.t_missing, type = "l")
 #calculate AVAR of X.t without any missing data
 AVAR.WN <- getAvars(N,X.t)
 
-plot(log10(AVAR.WN$avarRes$taus), log10(AVAR.WN$avarRes$avars), xlab = "log10(AVAR)", ylab = "log10(tau)",pch = 19 )
+plot(log10(AVAR.WN$avarRes$taus), log10(AVAR.WN$avarRes$avars), ylab = "log10(AVAR)", xlab = "log10(tau)",pch = 19 )
 
 #calculate AVAR of X.t with missing gaps, pushed together
 AVAR.WN_missing <- getAvars(length(na.omit(X.t_missing)),na.omit(X.t_missing)) #1435 data points
@@ -87,7 +87,10 @@ abline(h = 0)
 
 
 
+##Calculate \int_{-f_N}^{f_N} S.x.hat(f)df to get a variance estimate
+delta.f <- f.j.prime[2] - f.j.prime[1]
 
+sqrt(2*delta.f*sum(na.omit(S.x.hat)))
 
 
 ###########################################################
