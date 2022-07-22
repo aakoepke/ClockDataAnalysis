@@ -4,20 +4,39 @@
 ## approach and includes some EDA tools   ##
 ############################################
 library(purrr) #discrete uniform dist.
+library(tidyverse)
 
 #create data
-set.seed(11)
 N <-  2048
 X.t <- X.t_missing <-  rnorm(N, mean = 0, sd = 3)
 #create data with gaps
-endpoints <- sort(rdunif(4,2048,1))
+
+###random gaps#####
+###set.seed(20)
+###endpoints <- sort(rdunif(4,2048,1))
+
+###placed gaps####
+endpoints <- c(450,700,1000,1200)
+
+
 X.t_missing[c(endpoints[1]:endpoints[2], endpoints[3]:endpoints[4])] <- NA
+
 
 #look at the data
 par(mfrow = c(2,1))
 plot(X.t, type = "l")
 plot(X.t_missing, type = "l")
 
+
+#### EDA on X.t and X.t_missing ####
+
+#histogram
+hist(X.t)
+hist(X.t_missing)
+
+#still looks normally distributed
+acf(X.t)
+acf(na.omit(X.t_missing))
 
 
 
@@ -36,9 +55,6 @@ points(log10(AVAR.WN_missing$avarRes$taus), log10(AVAR.WN_missing$avarRes$avars)
 
 
 
-
-
-
 ############# Multitaper Spectral Estimate (MTSE)  ###############
 ### **see steps in google drive file and add here when ready** ####
 
@@ -48,7 +64,7 @@ points(log10(AVAR.WN_missing$avarRes$taus), log10(AVAR.WN_missing$avarRes$avars)
 
 f.nyquist <- 1/2
 N.prime <- N
-f.j.prime <- seq(0,f.nyquist, length.out = N.prime/2 + 1)
+f.j.prime <- seq(0,f.nyquist, length.out = N)
 X.tilde.prime <- X.t
 
 
@@ -70,16 +86,16 @@ plot(h.k.prime(k = 1, N = 4000, N.prime = 4096), type = "l") #look at taper for 
 
 #building multitaper S_x(f) estimator
 t <- 0:(N.prime-1)
-S.x.hat <- rep(NA, times = N.prime/2 + 1) #where S_x.hat(f'_j) will be saved
+S.x.hat <- rep(NA, times = N.prime) #where S_x.hat(f'_j) will be saved
 
-for(j in 0:N.prime/2){
+for(j in 0:(N.prime-1)){
   k.vec <- rep(NA,times = 6)
   for(k in 0:5){
     W.t <- h.k.prime(k = k, N=N, N.prime = N.prime)*X.tilde.prime
     inner.sum <- sum(W.t*exp(-complex(real = 0, imaginary = 1)*2*pi*t*j/N.prime))
     k.vec[k + 1] <- abs(inner.sum)^2
   }
-  S.x.hat[j] <- (1/length(k.vec))*sum(k.vec)
+  S.x.hat[j+1] <- (1/length(k.vec))*sum(k.vec)
 }
 
 plot(log10(f.j.prime), log10(S.x.hat), type = "l") #plot of multitaper spectral estimator
@@ -100,11 +116,11 @@ sqrt(2*delta.f*sum(na.omit(S.x.hat)))
 #create missing data tapers
 
 t.n <- 1:N
-t.n <- t.n[-c(endpoints[1]:endpoints[2], endpoints[3]:endpoints[4])]
-NW <- 12
+t.n[c(endpoints[1]:endpoints[2], endpoints[3]:endpoints[4])] <- NA
+NW <- 7
 W <- NW/length(t.n)
 dist.mat <- rdist(t.n)
-K = 8 #number of sequences we want
+K = 6 #number of sequences we want
 
 #create the A' matrix (Chave 2019 equation (22))
 A.prime <- (1/(pi*dist.mat))*sin(2*pi*W*dist.mat)
@@ -137,7 +153,7 @@ mdss_long[!is.na(mdss_long)] <- mdss
 
 plot(mdss_long,type = "l",col = colors[1]) #sign(sum(mdss1))*
 
-for(i in 2:8){
+for(i in 2:6){
   mdss <- eig_vecs[,i] #uk.mat$u[,i]#
   mdss_long <- X.t_missing #this contains NAs in the correct spots
   mdss_long[!is.na(mdss_long)] <- mdss
@@ -147,19 +163,44 @@ for(i in 2:8){
 
 ##use tapers to generate spectral estimate
 N.short <- floor(length(t.n)/2)
-S.x.hat_MD <- rep(NA, times = N.short + 1)
+S.x.hat_MD <- rep(NA, times = N)
 
-for(j in 0:N.short){
+for(j in 0:(N.prime-1)){
   k.vec <- rep(NA,times = 6)
   for(k in 0:5){
-    W.t <- eig_vecs[,k+1]*na.omit(X.t_missing)
-    inner.sum <- sum(W.t*exp(-complex(real = 0, imaginary = 1)*2*pi*t.n*j/N.short))
+    v_k <- insert(eig_vecs[,k+1], ats=c(rep(endpoints[1], times = endpoints[2] - endpoints[1] + 1),rep(endpoints[3], times = endpoints[4] - endpoints[3] + 1)))
+    W.t <- v_k*X.t_missing
+    inner.sum <- sum(W.t*exp(-complex(real = 0, imaginary = 1)*2*pi*t.n*j/N.prime), na.rm = TRUE)
     k.vec[k + 1] <- abs(inner.sum)^2
   }
-  S.x.hat_MD[j] <- (1/length(k.vec))*sum(k.vec)
+  S.x.hat_MD[j+1] <- mean(k.vec)
 }
 
-freqs <- seq(0,f.nyquist, length.out = N.short + 1)
-plot(log10(freqs), log10(S.x.hat_MD), type = "l") #plot of multitaper spectral estimator
+freqs <- seq(0,f.nyquist, length.out = N)
+lines(log10(freqs), log10(S.x.hat_MD), type = "l", col = "red") #plot of multitaper spectral estimator
 plot(freqs, S.x.hat_MD, type = "l") #plot of multitaper spectral estimator
+
+S.x.hat_MD <- rep(NA, times = N)
+
+#for(j in 0:(N-1)){
+j = 0
+  k.vec <- rep(NA,times = 6)
+  #for(k in 0:5){
+    k = 0
+    v_k <- insert(eig_vecs[,k+1], ats=c(rep(endpoints[1], times = endpoints[2] - endpoints[1] + 1),rep(endpoints[3], times = endpoints[4] - endpoints[3] + 1)))
+    W.t <- v_k*X.t_missing
+    inner.sum <- sum(W.t*exp(-complex(real = 0, imaginary = 1)*2*pi*t.n*j/N), na.rm = TRUE)
+    k.vec[k + 1] <- abs(inner.sum)^2
+  #}
+  S.x.hat_MD[j+1] <- mean(k.vec)
+#}
+
+
+
+
+############# MTSE for different W and K ##############
+
+
+
+
 
