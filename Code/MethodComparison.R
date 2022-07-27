@@ -5,7 +5,7 @@
 ############################################
 library(purrr) #discrete uniform dist.
 library(tidyverse)
-
+library(RSpectra)
 #create data
 N <-  2048
 X.t <- X.t_missing <-  rnorm(N, mean = 0, sd = 3)
@@ -52,7 +52,7 @@ plot(log10(AVAR.WN$avarRes$taus), log10(AVAR.WN$avarRes$avars), ylab = "log10(AV
 AVAR.WN_missing <- getAvars(length(na.omit(X.t_missing)),na.omit(X.t_missing)) #1435 data points
 
 points(log10(AVAR.WN_missing$avarRes$taus), log10(AVAR.WN_missing$avarRes$avars), col = "red", xlab = "log10(AVAR)", ylab = "log10(tau)",pch = 19  )
-
+abline(a = 1, b = -1, col = "blue")
 
 
 ############# Multitaper Spectral Estimate (MTSE)  ###############
@@ -199,6 +199,21 @@ j = 0
 
 
 ############# MTSE for different W and K ##############
+
+
+
+
+
+  
+  
+############# Clock Data Analysis  ##################
+load("Data/ClockData.RData")
+plot(clock_df$time,clock_df$AlYb)
+
+hist(na.omit(clock_df$AlYb))
+acf(na.omit(clock_df$AlYb)) #definitely not white noise
+
+
 
 
 
