@@ -1,11 +1,14 @@
 ---
 title: "Multitaper Spectral Analysis on Data with Dead Time"
-output: html_document
+output: 
+  html_document: 
+    number_sections: true
 date: "`r Sys.Date()`"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 library(arfima)
 library(tidyverse)
 library(fields)
@@ -13,6 +16,9 @@ library(multitaper)
 library(geigen)
 library(RSpectra)
 library(R.utils)
+
+load("C:/Users/cmb15/OneDrive - UCB-O365/NIST/ClockDataAnalysis/Data/ClockData.RData")
+
 #functions:
 h.k.prime <- function(k,N,N.prime){
   t <- 0:(N-1)
@@ -41,7 +47,7 @@ avar_fn=function(y,tau){
 }
 
 getAvars=function(N, y){
-  taus = 2^(0:5)
+  taus = 2^(0:10)
   
   avars=numeric(length(taus))
   
@@ -220,6 +226,7 @@ lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.
 legend(x = -3, y = 0.5, legend = c("Full Data", "Missing Data", "Truth"), col = c("black", "red", "blue"), lty = 1)
 ```
 
+
 ## Finding $K$ and $W$
 
 The above examples choose a $K$ and $W$ somewhat arbitrarily, although with some basis in previous work. According to (Percival, "Characterization of frequency stability..." 1991), for time and frequency data, typical values of $W$ are given by $\eta/N$ where $1 \leq \eta < 4$. The spectral windows of these estimators have a central lobe with approximate width $\eta/N$ for $\tau_1 = 1$ where $\tau_1$ is the time resolution of the data.
@@ -263,6 +270,10 @@ lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.
 plot(f,log10(MTSE_fd4$spectrum[-1]), type = "l", main = "NW = 4", ylab = "log10(S(f))")
 lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.005,0.5,length.out = 1025))))), col = "blue")
 ```
+## AVAR
+
+
+
 
 ## Power Law Processes
 
@@ -364,11 +375,30 @@ This shows the bias of the two sample approach.
 
 
 
-## Missing Data Example
+## Clock Data Example
 
 
+```{r}
+#load clock data
+t <- clock_df$time
+y <- clock_df$AlYb
+
+plot(t,y)
+
+hist(na.omit(y))
+acf(na.omit(y)) 
 
 
+```
+This doesn't seem like white noise based on the acf, let's take a look at what the allan deviation might tell us.
 
+```{r, echo = FALSE}
 
+#calculate AVAR of X.t with missing gaps, pushed together
+AVAR_missing <- getAvars(length(na.omit(y)),na.omit(y)) #31903 data points
 
+plot(log10(AVAR_missing$avarRes$taus), log10(AVAR_missing$avarRes$avars), xlab = "log10(tau)", ylab = "log10(AVAR)",pch = 19  , ylim = c(-4,1))
+
+abline(a = 1, b = -1, col = "blue")
+
+```

@@ -239,14 +239,14 @@ MTSE_wn$e.values
 MTSE_wn_missing$e.values
 
 ###### Test 2: ARFIMA(0,d,0) #######
-N <- 2^14
+N <- 4096
 set.seed(100)
 d <- 0.4
 X.t <- X.t_missing <- arfima.sim(N,model = list(dfrac = d))
 X.t_missing[c(20:35, 600:800,900:1010)] <- NA
 
 #MTSE of arfima with and without missing data
-MTSE_fd <- multitaper_est(X.t = X.t, NW = 2, K = 5)
+MTSE_fd <- multitaper_est(X.t = X.t, NW = 3, K = 5)
 MTSE_fd_missing <- multitaper_est(X.t = X.t_missing, NW = 2, K = 5)
 
 f <- log10(seq(0,0.5,length.out = length(MTSE_fd$spectrum)))[-1]
@@ -257,10 +257,14 @@ lines(f.missing, log10(MTSE_fd_missing$spectrum[-1]), col = "red")
 lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.005,0.5,length.out = 1025))))), col = "blue")
 
 
-lines(log10(f.j), -2*d*log10(2*sin(pi*f.j)), col = "blue")
-
 
 MTSE_fd$e.values
 MTSE_fd_missing$e.values
 
 
+#get variance estimate
+freqs <- seq(0,0.5, length.out = length(MTSE_fd$spectrum))
+2*freqs[2]*sum(MTSE_fd$spectrum)
+
+#variance of process
+factorial(-2*d)/(factorial(-d)^2)
