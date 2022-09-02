@@ -6,9 +6,17 @@
 library(purrr) #discrete uniform dist.
 library(tidyverse)
 library(RSpectra)
+
+
+####       Simulated Data     #####
+## A. white noise                ##
+## B. flicker noise?             ##
+## C. ARFIMA/combo of ARFIMA     ##
+###################################
+
 #create data
 N <-  2048
-X.t <- X.t_missing <-  rnorm(N, mean = 0, sd = 3)
+X.t <- X.t_missing <-  rnorm(N, mean = 0, sd = 0.05)
 #create data with gaps
 
 ###random gaps#####
@@ -28,31 +36,103 @@ plot(X.t, type = "l")
 plot(X.t_missing, type = "l")
 
 
-#### EDA on X.t and X.t_missing ####
+#### Quick little look at X.t and X.t_missing ####
 
 #histogram
 hist(X.t)
 hist(X.t_missing)
 
-#still looks normally distributed
+#acfs
 acf(X.t)
 acf(na.omit(X.t_missing))
 
 
 
-############# Two Sample Variance Methods  ####################
-### **see steps in google drive file and add here when ready** ####
 
-#calculate AVAR of X.t without any missing data
-AVAR.WN <- getAvars(N,X.t)
+#############                    Two Sample Variance Method                        ####################
+### 1.	Concatenate to remove gaps                                                                  ###
+### 2.	Calculate Allan Deviation (overlapping)                                                     ###
+### 3.	For clock ratios containing Al start cut off to use ADEV                                    ###
+###      points above 10-20 seconds and for Yb or Sr maybe start with 20 seconds to be safe         ###
+### 4.	Fit a line for ADEV points for tau = 10-20 seconds (depending on step 3 above)              ###
+###      through tau = 1/3 the length of the dataset where you set the slope of the line            ###
+###      to follow 1/sqrt(tau) and solve for the intercept                                          ###
+### 5.	Extrapolate that line out to tau = length of the dataset (or until you detect a floor perhaps)#
+#######################################################################################################
 
-plot(log10(AVAR.WN$avarRes$taus), log10(AVAR.WN$avarRes$avars), ylab = "log10(AVAR)", xlab = "log10(tau)",pch = 19 )
+
+#### 1. Concatenate gappy data  ####
+X.t_concat <- na.omit(X.t_missing)
+
+plot(X.t_concat, type = "l")
+N.short <- length(X.t_concat)
+
+
+#### 2. Calculate ADEV          ####
+AVAR.WN <- getAvars(N,X.t, taus = c(1:20, 2^(5:9)))
+
+plot(log10(AVAR.WN$avarRes$taus), log10(AVAR.WN$avarRes$avars), ylab = "log10(AVAR)", xlab = "log10(tau)",pch = 19, ylim = c(-6,-1))
 
 #calculate AVAR of X.t with missing gaps, pushed together
-AVAR.WN_missing <- getAvars(length(na.omit(X.t_missing)),na.omit(X.t_missing)) #1435 data points
+AVAR.WN_missing <- getAvars(N.short,X.t_concat, taus = c(1:20, 2^(5:9)))
 
 points(log10(AVAR.WN_missing$avarRes$taus), log10(AVAR.WN_missing$avarRes$avars), col = "red", xlab = "log10(AVAR)", ylab = "log10(tau)",pch = 19  )
-abline(a = 1, b = -1, col = "blue")
+
+
+#### 3. + 4. Fit a line for points between tau = 10-1/3 of data set ####
+floor(N/3) #682
+N.short/3 #532
+
+AVAR.WN <- getAvars(N,X.t, taus = seq(10,floor(N/3), by = 2))
+
+log.avar.full <- log10(AVAR.WN$avarRes$avars)
+log.taus.full <- log10(AVAR.WN$avarRes$taus)
+
+lin.fit.full <- lm(log.avar.full ~ log.taus.full)
+summary(lin.fit.full)
+
+
+AVAR.WN.short <- getAvars(N.short,X.t_concat, taus = seq(10,floor(N.short/3), by = 2))
+
+log.avar.short <- log10(AVAR.WN.short$avarRes$avars)
+log.taus.short <- log10(AVAR.WN.short$avarRes$taus)
+
+lin.fit.short <- lm(log.avar.short ~ log.taus.short)
+summary(lin.fit.short)
+
+plot(lin.fit.short)
+
+### show the fits ###
+
+## Full Data ##
+
+plot(log.taus.full, log.avar.full, ylab = "log10(AVAR)", xlab = "log10(tau)",pch = 19, ylim = c(-6.5,-3)) #avar of full data with no gaps
+
+full.intercept <- as.numeric(lin.fit.full$coefficients[1]) #intercept estimate from linear fit of full data with no gaps
+full.slope <- as.numeric(lin.fit.full$coefficients[2]) #slope from linear fit of full data with no gaps
+
+abline(a = full.intercept, b = full.slope, col = "blue", lwd = 2) #linear fit
+
+## Partial Data ##
+
+plot(log.taus.short, log.avar.short, ylab = "log10(AVAR)", xlab = "log10(tau)",pch = 19, ylim = c(-6.5,-3)) #plot of avar for concatenated gappy data
+
+short.intercept <- as.numeric(lin.fit.short$coefficients[1]) #intercept estimate from linear fit of concatenated gappy data
+short.slope <- as.numeric(lin.fit.short$coefficients[2]) #slope estimate from "" ""
+
+abline(a = lin.fit.short$coefficients[1], b = lin.fit.short$coefficients[2], col = "blue", lwd = 2) #linear fit line
+
+
+#### 5.	Extrapolate that line out to tau = length of the dataset (or until you detect a floor perhaps) ####
+
+
+AVAR.hat.full <- exp(full.intercept + full.slope*log10(N)) #estimate of AVAR by extrapolating out to full data set
+
+sqrt(AVAR.hat.full)
+
+AVAR.hat.short <- exp(short.intercept + short.slope*log10(N.short)) #estimate of AVAR by extrapolating out to lenght of concatenated gappy data
+
+sqrt(AVAR.hat.short)
 
 
 ############# Multitaper Spectral Estimate (MTSE)  ###############
@@ -62,138 +142,44 @@ abline(a = 1, b = -1, col = "blue")
 ##### calculate MTSE for X.t without any missing data #####
 ###########################################################
 
-f.nyquist <- 1/2
-N.prime <- N
-f.j.prime <- seq(0,f.nyquist, length.out = N)
-X.tilde.prime <- X.t
+
+MTSE_full <- multitaper_est(X.t, NW = 2, K = 3) #compute the multitaper spectral estimate for the full data set
+
+f <- seq(0,0.5,length.out = length(MTSE_full$spectrum)) #grid of frequencies
+
+plot(log10(f[-1]), log10(MTSE_full$spectrum)[-1], type = "l") #plot of f vs. S.hat(f) on log-log scale
+
+MTSE_full$e.values #looking that the eigenvalues are close to 1
 
 
-#function to create taper h'_k,N,t
-h.k.prime <- function(k,N,N.prime){
-  t <- 0:(N-1)
-  h.k.N <- (2/(N+1))^(1/2)*sin((k + 1)*pi*(t + 1)/(N + 1)) #value of h' taper for t = 0, .., N-1
-  if(N.prime > N){
-    return(c(h.k.N, rep(0, times = N.prime-N)))#add in the 0's to pad the end to get up to 4096
-  }
-  else{
-    return(h.k.N)
-  }
+
+## Bandpass Variance or Transfer Function comparison to AVAR
+delta.f <- 0.5/(length(MTSE_full$spectrum)-1) #delta f, distance between each frequency in the frequency grid
+
+#bandpass variance
+tau <-  floor(N/3) #1/3 the length of the dataset
+
+bp.var <- 2*(MTSE_full$spectrum[1]*(f[2] - 1/(4*tau)) + MTSE_full$spectrum[2]*(1/(2*tau) - f[2]))
+
+
+#transfer function
+transfer.func <- function(f,tau){
+  4*sin(pi*f*tau)^4/(tau*sin(pi*f))^2
 }
+G.vec <- transfer.func(f, tau)
+G.vec[1] <- 1
 
-plot(h.k.prime(k = 0, N = 4000, N.prime = 4096), type = "l") #look at taper for k = 0 with zero padding
-plot(h.k.prime(k = 1, N = 4000, N.prime = 4096), type = "l") #look at taper for k = 1 with zero padding
-
-
-#building multitaper S_x(f) estimator
-t <- 0:(N.prime-1)
-S.x.hat <- rep(NA, times = N.prime) #where S_x.hat(f'_j) will be saved
-
-for(j in 0:(N.prime-1)){
-  k.vec <- rep(NA,times = 6)
-  for(k in 0:5){
-    W.t <- h.k.prime(k = k, N=N, N.prime = N.prime)*X.tilde.prime
-    inner.sum <- sum(W.t*exp(-complex(real = 0, imaginary = 1)*2*pi*t*j/N.prime))
-    k.vec[k + 1] <- abs(inner.sum)^2
-  }
-  S.x.hat[j+1] <- (1/length(k.vec))*sum(k.vec)
-}
-
-plot(log10(f.j.prime), log10(S.x.hat), type = "l") #plot of multitaper spectral estimator
-abline(h = 0)
-
-
-
-##Calculate \int_{-f_N}^{f_N} S.x.hat(f)df to get a variance estimate
-delta.f <- f.j.prime[2] - f.j.prime[1]
-
-sqrt(2*delta.f*sum(na.omit(S.x.hat)))
+f[2]*sum(G.vec*MTSE_full$spectrum)
 
 
 ###########################################################
 #####     calculate MTSE for X.t with missing data    #####
 ###########################################################
 
-#create missing data tapers
-
-t.n <- 1:N
-t.n[c(endpoints[1]:endpoints[2], endpoints[3]:endpoints[4])] <- NA
-NW <- 7
-W <- NW/length(t.n)
-dist.mat <- rdist(t.n)
-K = 6 #number of sequences we want
-
-#create the A' matrix (Chave 2019 equation (22))
-A.prime <- (1/(pi*dist.mat))*sin(2*pi*W*dist.mat)
-A.prime[row(A.prime) == col(A.prime)] <- W*2
-eigdec <- eigs_sym(A.prime, k = K, which = "LM")
+MTSE_short <- multitaper_est(X.t_missing, NW = 2, K = 3)
+lines(log10(seq(0,0.5,length.out = length(MTSE_short$spectrum)))[-1], log10(MTSE_short$spectrum)[-1], type = "l", col = "red")
 
 
-eig_vecs <- eigdec$vectors #get only the vectors
-
-#some sign maintenance
-    for(i in seq(1,K,by = 2)){
-      if (mean(Re(eig_vecs[,i]))<0){
-        eig_vecs[,i] <- -eig_vecs[,i]
-      }
-    }
-    
-    for(i in seq(2,K-1,by = 2)){
-      if (Re(eig_vecs[2,i] - eig_vecs[1,i])<0){
-        eig_vecs[,i] <- -eig_vecs[,i]
-      }
-    }
-
-##plot the tapers
-colors = c("blue", "red", "green", "magenta", "cyan")
-k = 0
-s = 1
-mdss <- eig_vecs[,s]
-mdss_long <- X.t_missing #this contains NAs in the correct spots
-mdss_long[!is.na(mdss_long)] <- mdss
-
-plot(mdss_long,type = "l",col = colors[1]) #sign(sum(mdss1))*
-
-for(i in 2:6){
-  mdss <- eig_vecs[,i] #uk.mat$u[,i]#
-  mdss_long <- X.t_missing #this contains NAs in the correct spots
-  mdss_long[!is.na(mdss_long)] <- mdss
-  lines(mdss_long,type = "l",col = colors[i-5*k])
-}
-
-
-##use tapers to generate spectral estimate
-N.short <- floor(length(t.n)/2)
-S.x.hat_MD <- rep(NA, times = N)
-
-for(j in 0:(N.prime-1)){
-  k.vec <- rep(NA,times = 6)
-  for(k in 0:5){
-    v_k <- insert(eig_vecs[,k+1], ats=c(rep(endpoints[1], times = endpoints[2] - endpoints[1] + 1),rep(endpoints[3], times = endpoints[4] - endpoints[3] + 1)))
-    W.t <- v_k*X.t_missing
-    inner.sum <- sum(W.t*exp(-complex(real = 0, imaginary = 1)*2*pi*t.n*j/N.prime), na.rm = TRUE)
-    k.vec[k + 1] <- abs(inner.sum)^2
-  }
-  S.x.hat_MD[j+1] <- mean(k.vec)
-}
-
-freqs <- seq(0,f.nyquist, length.out = N)
-lines(log10(freqs), log10(S.x.hat_MD), type = "l", col = "red") #plot of multitaper spectral estimator
-plot(freqs, S.x.hat_MD, type = "l") #plot of multitaper spectral estimator
-
-S.x.hat_MD <- rep(NA, times = N)
-
-#for(j in 0:(N-1)){
-j = 0
-  k.vec <- rep(NA,times = 6)
-  #for(k in 0:5){
-    k = 0
-    v_k <- insert(eig_vecs[,k+1], ats=c(rep(endpoints[1], times = endpoints[2] - endpoints[1] + 1),rep(endpoints[3], times = endpoints[4] - endpoints[3] + 1)))
-    W.t <- v_k*X.t_missing
-    inner.sum <- sum(W.t*exp(-complex(real = 0, imaginary = 1)*2*pi*t.n*j/N), na.rm = TRUE)
-    k.vec[k + 1] <- abs(inner.sum)^2
-  #}
-  S.x.hat_MD[j+1] <- mean(k.vec)
-#}
 
 
 

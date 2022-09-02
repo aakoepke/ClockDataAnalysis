@@ -46,8 +46,7 @@ avar_fn=function(y,tau){
   1/(2*(M-1)) * sum(diff(groupmeans)^2)
 }
 
-getAvars=function(N, y){
-  taus = 2^(0:10)
+getAvars=function(N, y,taus){
   
   avars=numeric(length(taus))
   
@@ -193,7 +192,7 @@ MTSE_fd_missing <- multitaper_est(X.t = X.t_missing, NW = 2, K = 5)
 f <- log10(seq(0,0.5,length.out = length(MTSE_fd$spectrum)))[-1]
 f.missing <- log10(seq(0,0.5,length.out = length(MTSE_fd_missing$spectrum)))[-1]
 
-plot(f,log10(MTSE_fd$spectrum[-1]), type = "l", main = "Full vs. Partial Data MTSE comparison, d = 0.4")
+plot(f,log10(MTSE_fd$spectrum[-1]), type = "l", main = "Full vs. Partial Data MTSE comparison, d = 0.4", xlab = "log10(f)")
 lines(f.missing, log10(MTSE_fd_missing$spectrum[-1]), col = "red")
 lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.005,0.5,length.out = 1025))))), col = "blue")
 legend(x = -3, y = 0.5, legend = c("Full Data", "Missing Data", "Truth"), col = c("black", "red", "blue"), lty = 1)
@@ -220,7 +219,7 @@ MTSE_fd_missing <- multitaper_est(X.t = X.t_missing, NW = 2, K = 5)
 f <- log10(seq(0,0.5,length.out = length(MTSE_fd$spectrum)))[-1]
 f.missing <- log10(seq(0,0.5,length.out = length(MTSE_fd_missing$spectrum)))[-1]
 
-plot(f,log10(MTSE_fd$spectrum[-1]), type = "l", main = "Full vs. Partial Data MTSE comparison, d = 0.25", ylab = "log10(S(f))")
+plot(f,log10(MTSE_fd$spectrum[-1]), type = "l", main = "Full vs. Partial Data MTSE comparison, d = 0.25", ylab = "log10(S(f))", xlab = "log10(f)")
 lines(f.missing, log10(MTSE_fd_missing$spectrum[-1]), col = "red")
 lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.005,0.5,length.out = 1025))))), col = "blue")
 legend(x = -3, y = 0.5, legend = c("Full Data", "Missing Data", "Truth"), col = c("black", "red", "blue"), lty = 1)
@@ -242,10 +241,10 @@ According to literature the first $2NW$ eigenvalues are supposed to be close to 
 ### Choosing W:
 
 ```{r}
-MTSE_fd1 <- multitaper_est(X.t = X.t, NW = 1, K = 1)
-MTSE_fd2 <- multitaper_est(X.t = X.t, NW = 2, K = 2)
-MTSE_fd3 <- multitaper_est(X.t = X.t, NW = 3, K = 3)
-MTSE_fd4 <- multitaper_est(X.t = X.t, NW = 4, K = 4)
+MTSE_fd1 <- multitaper_est(X.t = X.t, NW = 1, K = 2)
+MTSE_fd2 <- multitaper_est(X.t = X.t, NW = 2, K = 4)
+MTSE_fd3 <- multitaper_est(X.t = X.t, NW = 3, K = 6)
+MTSE_fd4 <- multitaper_est(X.t = X.t, NW = 4, K = 8)
 
 MTSE_fd1$e.values
 MTSE_fd2$e.values
@@ -261,14 +260,16 @@ This might be a good choice for $K$, then $K = 2NW - 1$
 
 par(mfrow = c(2,2))
 
-plot(f,log10(MTSE_fd1$spectrum[-1]), type = "l", main = "NW = 1", ylab = "log10(S(f))")
-lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.005,0.5,length.out = 1025))))), col = "blue")
+f <- log10(seq(0,0.5,length.out = length(MTSE_fd1$spectrum)))[-1]
+
+plot(f,log10(MTSE_fd1$spectrum[-1]), type = "l", main = "NW = 1", ylab = "log10(S(f))", xlab = "log10(f)")
+lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.005,0.5,length.out = 1025))))), col = "blue", xlab = "log10(f)")
 plot(f,log10(MTSE_fd2$spectrum[-1]), type = "l", main = "NW = 2", ylab = "log10(S(f))")
-lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.005,0.5,length.out = 1025))))), col = "blue")
+lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.005,0.5,length.out = 1025))))), col = "blue", xlab = "log10(f)")
 plot(f,log10(MTSE_fd3$spectrum[-1]), type = "l", main = "NW = 3", ylab = "log10(S(f))")
-lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.005,0.5,length.out = 1025))))), col = "blue")
+lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.005,0.5,length.out = 1025))))), col = "blue", xlab = "log10(f)")
 plot(f,log10(MTSE_fd4$spectrum[-1]), type = "l", main = "NW = 4", ylab = "log10(S(f))")
-lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.005,0.5,length.out = 1025))))), col = "blue")
+lines(log10(seq(0.001,0.5,length.out = 1025)),-2*d*log10(2*abs(sin(abs(pi*seq(0.005,0.5,length.out = 1025))))), col = "blue", xlab = "log10(f)")
 ```
 ## AVAR
 
@@ -338,7 +339,7 @@ Y[i,] <- rnorm(N,mean = 0, sd = 1)
 #2. Calculate AVAR estimates
 AVAR.Y <- matrix(NA, nrow = 1000, ncol = 6)
 for(i in 1:1000){
-  AVAR.Y[i,] <- getAvars(N,Y[i,])$avarRes$avars
+  AVAR.Y[i,] <- getAvars(N,Y[i,],taus = 2^(0:5))$avarRes$avars
 }
 
 #3. Calculate S_y(f_k) estimates
@@ -395,10 +396,70 @@ This doesn't seem like white noise based on the acf, let's take a look at what t
 ```{r, echo = FALSE}
 
 #calculate AVAR of X.t with missing gaps, pushed together
-AVAR_missing <- getAvars(length(na.omit(y)),na.omit(y)) #31903 data points
+AVAR_missing <- getAvars(length(na.omit(y)),na.omit(y), taus = 2^(0:11)) #31903 data points
 
 plot(log10(AVAR_missing$avarRes$taus), log10(AVAR_missing$avarRes$avars), xlab = "log10(tau)", ylab = "log10(AVAR)",pch = 19  , ylim = c(-4,1))
 
-abline(a = 1, b = -1, col = "blue")
+abline(a = 0, b = -1, col = "blue")
 
 ```
+
+
+Spectral analysis:
+
+```{r, echo = FALSE}
+
+MTSE_AlYb <- multitaper_est(X.t = y[1:max(which(!is.na(y)))], NW = 3, K = 5)
+
+
+```
+
+```{r, echo = FALSE}
+
+
+f <- log10(seq(0,0.5,length.out = length(MTSE_AlYb$spectrum)))[-1]
+
+plot(f,log10(MTSE_AlYb$spectrum[-1]), type = "l", main = "Al/Yb clock data", ylab = "log10(S(f))")
+abline(v = f[200])
+```
+
+
+Fit a line to the end piece of the spectrum?
+
+```{r}
+L <- length(MTSE_AlYb$spectrum)
+lin.fit <- lm(log10(MTSE_AlYb$spectrum[200:L]) ~ f[200:L])
+
+summary(lin.fit)
+plot(lin.fit)
+```
+
+```{r}
+plot(f,log10(MTSE_AlYb$spectrum[-1]), type = "l", main = "Al/Yb clock data", ylab = "log10(S(f))")
+abline(a = lin.fit$coefficients[1], b = lin.fit$coefficients[2], col = "red")
+```
+
+## Bandpass Variance
+
+
+A band-pass variance, defined: $$\beta_y^2(\tau) = 2\int_{1/4\tau}^{1/2\tau} S_y(f)df$$
+according to "Reappraisal.." + Rutman 1978. For certain power-law processes $$\beta_y^2(\tau) \approx \frac{1}{2} \sigma^2_y(2;\tau)$$.
+
+What would the estimate of bandpass variance be? Let $\tau = N/4$, where $N$ = length of the data set. Then numerically integrate our spectral estimate: $$2\beta_y^2(N) = 4\int_{1/4N}^{1/2N} \hat{S}_y(f)df$$
+
+
+Below is an estimate using the clock data above:
+
+```{r}
+N = length(na.omit(clock_df$AlYb))
+freqs <- seq(0,0.5, length.out = length(MTSE_AlYb$spectrum))
+4*freqs[2]*MTSE_AlYb$spectrum[2]
+```
+
+### Bandpass Variance for White Noise
+
+Just as a check, consider a white noise process. This has a flat spectrum, so the bandpass variance would be $$2a[\frac{1}{2\tau} - \frac{1}{4\tau}] = \frac{a}{2\tau} $$ where $a$ is the variance of the white noise process.
+
+
+
+
