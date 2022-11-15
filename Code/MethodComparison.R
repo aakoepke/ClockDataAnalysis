@@ -15,19 +15,13 @@ library(RSpectra)
 ###################################
 
 #create data
-N <-  2048
+N <-  14500
 X.t <- X.t_missing <-  rnorm(N, mean = 0, sd = 0.05)
 #create data with gaps
 
-###random gaps#####
-###set.seed(20)
-###endpoints <- sort(rdunif(4,2048,1))
 
 ###placed gaps####
-endpoints <- c(450,700,1000,1200)
-
-
-X.t_missing[c(endpoints[1]:endpoints[2], endpoints[3]:endpoints[4])] <- NA
+X.t_missing[c(4745:5447, 8378:9545,12823:13051)] <- NA
 
 
 #look at the data
@@ -102,6 +96,13 @@ summary(lin.fit.short)
 
 plot(lin.fit.short)
 
+##set slope and find intercept using OLS
+
+beta = -1 #in log-log space, white noise should have a -1 slope
+int.only_full <- mean(log.avar.full) - beta*mean(log.taus.full)
+int.only_short <- mean(log.avar.short) - beta*mean(log.taus.short)
+
+
 ### show the fits ###
 
 ## Full Data ##
@@ -136,14 +137,13 @@ sqrt(AVAR.hat.short)
 
 
 ############# Multitaper Spectral Estimate (MTSE)  ###############
-### **see steps in google drive file and add here when ready** ####
 
 ###########################################################
 ##### calculate MTSE for X.t without any missing data #####
 ###########################################################
 
 
-MTSE_full <- multitaper_est(X.t, NW = 2, K = 3) #compute the multitaper spectral estimate for the full data set
+MTSE_full <- multitaper_est(X.t, W = 0.0007, K = 5) #compute the multitaper spectral estimate for the full data set
 
 f <- seq(0,0.5,length.out = length(MTSE_full$spectrum)) #grid of frequencies
 
@@ -153,23 +153,6 @@ MTSE_full$e.values #looking that the eigenvalues are close to 1
 
 
 
-## Bandpass Variance or Transfer Function comparison to AVAR
-delta.f <- 0.5/(length(MTSE_full$spectrum)-1) #delta f, distance between each frequency in the frequency grid
-
-#bandpass variance
-tau <-  floor(N/3) #1/3 the length of the dataset
-
-bp.var <- 2*(MTSE_full$spectrum[1]*(f[2] - 1/(4*tau)) + MTSE_full$spectrum[2]*(1/(2*tau) - f[2]))
-
-
-#transfer function
-transfer.func <- function(f,tau){
-  4*sin(pi*f*tau)^4/(tau*sin(pi*f))^2
-}
-G.vec <- transfer.func(f, tau)
-G.vec[1] <- 1
-
-f[2]*sum(G.vec*MTSE_full$spectrum)
 
 
 ###########################################################
@@ -178,7 +161,6 @@ f[2]*sum(G.vec*MTSE_full$spectrum)
 
 MTSE_short <- multitaper_est(X.t_missing, NW = 2, K = 3)
 lines(log10(seq(0,0.5,length.out = length(MTSE_short$spectrum)))[-1], log10(MTSE_short$spectrum)[-1], type = "l", col = "red")
-
 
 
 
@@ -193,13 +175,33 @@ lines(log10(seq(0,0.5,length.out = length(MTSE_short$spectrum)))[-1], log10(MTSE
   
   
 ############# Clock Data Analysis  ##################
-load("Data/ClockData.RData")
-plot(clock_df$time,clock_df$AlYb)
+## read in dat180403 from readTaraData.R file
 
-hist(na.omit(clock_df$AlYb))
-acf(na.omit(clock_df$AlYb)) #definitely not white noise
+## A little EDA
 
+# what do the various ratios look like?
+par(mfrow = c(3,1))
+plot(dat180403$AlYb, type = "l")
+plot(dat180403$SrYb, type = "l")
+plot(dat180403$AlSr, type = "l")
 
+# Does it look like white noise with missing data omitted?
+
+## distribution normal looking?
+hist(na.omit(dat180403$AlYb))
+hist(na.omit(dat180403$SrYb))
+hist(na.omit(dat180403$AlSr))
+
+## Uncorrelated? 
+acf(na.omit(dat180403$AlYb))
+acf(na.omit(dat180403$SrYb))
+acf(na.omit(dat180403$AlSr)) 
+#there is clearly autocorrelation in these data which is the first sign to me that this is not white noise
+
+## ACF of first differences just for fun, still not white looking
+acf(diff(na.omit(dat180403$AlYb)))
+acf(diff(na.omit(dat180403$SrYb)))
+acf(diff(na.omit(dat180403$AlSr)))
 
 
 

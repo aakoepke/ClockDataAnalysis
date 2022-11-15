@@ -21,24 +21,26 @@ avar_fn=function(y,tau){
 
 ########overlapping
 
-overlapping_avar_fn=function(y,m){
+#overlapping_avar_fn=function(y,m){
+y <- white.noise
+m = 2
   M=length(y)
   
-  numberOfGroups=M-m
+  numberOfGroups=M-2*m
   groupmeans = numeric(numberOfGroups)
   
-  for(i in 1:(M-m)){
-    groupmeans[i]=mean(y[i:(i+m)])  
+  for(i in 1:(M-2*m)){
+    groupmeans[i]= mean(y[i:(i+m)])  
   }
   
   out=0
-  for(i in 1:(M-2*m)){
+  for(i in 1:(M-3*m)){
     out=out+(groupmeans[i+m]-groupmeans[i])^2
   }
   out=out/(2*(M-2*m+1))
   
   return(out)
-}
+#}
 
 
 getAvars=function(N){

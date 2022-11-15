@@ -304,7 +304,9 @@ legend(x = 0, y = -2, legend = c("Theoretical WN", "Estimated", "Mean"), col = c
 #use R package function for the theoretical acvf of ARFIMA
 library(arfima)
 
-arfima.sim(N,model = list(dfrac = d))tavar_ARFIMA <- function(N,d, sig.2.a){
+arfima.sim(N,model = list(dfrac = d))
+
+tavar_ARFIMA <- function(N,d, sig.2.a){
   rho.vec <- tacvfARFIMA(phi = 0, theta = 0, dfrac = d, maxlag = 2*N)
   corr.vec <- rho.vec/max(rho.vec) #normalize
   taus <- 2:N
@@ -324,7 +326,7 @@ arfima.sim(N,model = list(dfrac = d))tavar_ARFIMA <- function(N,d, sig.2.a){
   return(numerator/denom)
 }
 N = 2048
-t1 <- tavar_ARFIMA(N = N/2, d = 0.49, sig.2.a = 1)
+t1 <- tavar_ARFIMA(N = N/2, d = d, sig.2.a = 1)
 t2 <- tavar_ARFIMA(N = N/2, d = 0.25, sig.2.a = 1)
 
 plot(log10(1:1023),log10(t1),type = "l", ylim = c(-2,0))
@@ -334,17 +336,18 @@ lines(log10(1:1023),log10(t2),lty = 2, col = "red")
 
 ####Multiple Simulation Experiment ARFIMA(0,0.25,0), ARFIMA(0,0.49,0)
 
-d <- 0.49
+d <- 0.49999
 N = 2048
 taus = c(1:10,15,20)
 taus = c(taus,seq(30,N/2,by=10)) 
 avar_saved_ARFIMA_49 <- matrix(NA, nrow = 100, ncol = 112)
 
 for(i in 1:100){
+  print(i)
   set.seed(i)
   y <- arfima.sim(N,model = list(dfrac = d))
   
-  avar_saved_ARFIMA_49[i,] <- getAvars(N,y)$avarRes$avars
+  avar_saved_ARFIMA_49[i,] <- getAvars(N,y, taus)$avarRes$avars
 }
 
 

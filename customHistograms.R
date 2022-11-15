@@ -41,7 +41,7 @@ sumDat=dat %>% group_by(method,tau) %>%
 
 
 linedat=data.frame(tau=1:1000)
-linedat$truth=1/linedat$tau+linedat$tau
+linedat$truth=1/linedat$tau#+linedat$tau
 linedat$method=NA
 
 ggplot(dat,aes(tau,measurement,col=method,group=interaction(tau,method)))+
