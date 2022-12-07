@@ -64,11 +64,7 @@ var_AVAR_trfunc <- function(tapers, t.n, X.t, taus){
   X.t <- X.t - mean(X.t)
   L <- length(X.t)
   R.x <- matrix(NA, nrow = L, ncol = L)
-  for(i in 1:L){
-    for(j in 1:L){
-      R.x[i,j] <- cor(X.t[i],X.t[j])
-    }
-  }
+ 
   
   #f vector
   f <- seq(0,0.5, length.out = floor(length(t.n))/2 + 1)
