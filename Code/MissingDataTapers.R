@@ -125,3 +125,28 @@ max(abs(u.matlab - chave.check$tapers))
 
 plot(log10(seq(0,0.5, length.out = length(chave.check$spectrum))), log10(chave.check$spectrum))
 
+
+
+
+#####check against true spectrum #####
+
+X_process <- rnorm(5000)
+
+
+plot(spectral.estimate$spectrum)
+spec.pgram(X_process)
+abline(h = 1, col = "blue")
+
+?arima.sim
+
+X_process <- arima.sim(n = 1000, list(ar = 0.5, sd = 1))
+
+
+ar.spectrum <- function(omega, phi, sig.e){
+  (sig.e^2/(2))*(1/(1 + phi^2 - 2*phi*cos(omega)))
+}
+
+spec.pgram(X_process)
+lines(seq(0,0.5, length.out = 501), ar.spectrum(seq(0,pi, length.out = 501), phi = 0.5, sig.e = 1), col = "blue")
+spectral.estimate <- multitaper_est(X.t = X_process, W = 0.01, K = 5)
+plot(seq(0,pi, length.out = 501)/(2*pi), spectral.estimate$spectrum)

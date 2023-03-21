@@ -129,13 +129,13 @@ return(out)
 ### to test out function below, run the following lines:
 
 #make a white noise process and add some NA values
-X.t_missing <- rnorm(100)
-X.t_missing[c(8:20,51:70)] <- NA
+X.t_missing <- rnorm(300, mean = 0, sd = 0.01)
+X.t_missing[c(8:20,51:70, 200:220)] <- NA
 
 #get spectral estimate
-spec.est <- multitaper_est(X.t_missing,W=0.09, K = 5)
+spec.est <- multitaper_est(X.t_missing,W=0.0325, K = 5) #0.09
 tapers <- spec.est$tapers
-t.vec <- 1:100
+t.vec <- 1:300
 t.n <- t.vec[which(!is.na(X.t_missing))]
 X.t <-  na.omit(X.t_missing)
 taus <-  2^(0:6)

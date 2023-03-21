@@ -36,7 +36,7 @@ f[2]*sum(G.vec*MTSE_full$spectrum)
 ###Example 1: White Noise #######
 #################################
 
-N <- 2048
+N <- 14500
 trfunc.vec <- bpvar.vec <- rep(NA, times = 300)
 
 tmat <- bmat <- matrix(NA, ncol = 300, nrow = 11)
@@ -45,7 +45,7 @@ f <- seq(0,0.5,length.out = N/2 + 1) #grid of frequencies
 delta.f <- f[2]
 
 
-r = 0
+r = 3
 for(k in c(2^(0:9), floor(N/3))){
   r = r + 1
   tau = k

@@ -5,7 +5,7 @@
 
 #test out the functions in AVARSpectralEstimate file
 
-X.t <- X.t_missing <- rnorm(100)
+X.t <- X.t_missing <- rnorm(300)
 #X.t_missing[c(100:200, 700:950, 1500:1600)] <- NA
 X.t_missing[c(8:13,18,35,51:52)] <- NA
 plot(X.t)
@@ -15,18 +15,18 @@ spec.est <- spec.pgram(X.t, demean = TRUE)
 test_AVAR <- AVAR_bpvar(spectral_est = spec.est$spec, taus = 2^(0:8))
 test_AVAR
 
-spec.est <- multitaper_est(X.t_missing,W=0.005, K = 5)
-
-
-length(spec.est$spectrum)
-
-t.vec <- 1:100
+spec.est <- multitaper_est(X.t_missing,W=0.08, K = 5)
 
 tapers = spec.est$tapers
 t.n =  t.vec[which(!is.na(X.t_missing))]
 X.t = na.omit(X.t_missing)
 taus = 2^(0:6)
 
+
+
+length(spec.est$spectrum)
+
+t.vec <- 1:100
 
 
 #var_AVAR_trfunc <- function(tapers, t.n, X.t, taus){
@@ -37,7 +37,7 @@ saved <- acf(X.t_missing, na.action = na.pass, lag.max = 100)
   #R.x matrix
   X.t <- X.t - mean(X.t)
   L <- length(X.t)
-  R.x <- matrix(saved$acf[dist.mat+1], nrow = L, ncol = L)
+  #R.x <- matrix(saved$acf[dist.mat+1], nrow = L, ncol = L)
   #f vector
   f <- seq(0,0.5, length.out = floor(length(t.n))/2 + 1)
   
@@ -47,19 +47,34 @@ saved <- acf(X.t_missing, na.action = na.pass, lag.max = 100)
   Cov.mat <- matrix(NA, nrow = N, ncol = N)
   W_matlist <- list()
   
-  for(i in 1:N){
-  print(i)
-    W_matlist[[i]] <- t(tapers)%*%exp(-im*2*pi*f[i]*dist.mat)
+  
+  ##### Messing with Tapers #####
+  for(i in 1:5){
+    tapers[,i] <- tapers[,i]*exp(-im*2*pi*f[1]*t.n)
   }
   
-for(i in 1:N){
+  tapers_i <- tapers
+  tapers_j <- spec.est$tapers
+  
+  for(i in 1:5){
+    tapers_j[,i] <- tapers_j[,i]*exp(-im*2*pi*f[10]*t.n)
+  }
+  
+  #######################
+  
+  for(i in 1:N){
+    print(i)
+    W_matlist[[i]] <- tapers*exp(-im*2*pi*f[i]*t.n)
+  }
+  
+  for(i in 1:N){
   print(i)
   j = i
    while(j>=i & j <=N){
-      W.star <- Conj(W_matlist[[i]])
-      W <- t(W_matlist[[j]])
-      #Cov.mat[i,j] <- sum(abs(W.star%*%R.x%*%W)^2) #frobenius norm 
-      Cov.mat[i,j] <- norm(W.star%*%R.x%*%W, type = "2") #2-norm
+      W.star <- t(Conj(W_matlist[[i]]))
+      W <- W_matlist[[j]]
+      Cov.mat[i,j] <- (1/5)*sum(abs(W.star%*%W)^2) #frobenius norm 
+      #Cov.mat[i,j] <- (1/5)*norm(W%*%W.star, type = "2") #2-norm
       j = j + 1
     }
 }
@@ -79,12 +94,14 @@ for(i in 1:N){
 #}
       
 
-#R.x matrix
-      
-saved <- acf(X.t_missing, na.action = na.pass, lag.max = 2048)
 
-length(saved$acf)
 
-saved$acf[dist.mat[i,j]]
-length(t.n)
-saved$acf[abs(t.n[i] - t.n[j])]
+
+
+
+X.t <- TK95(N = 5224, alpha = 1)
+X.t[c(100:500,1300:1400, 1700:1874, 3000:3450)] <- NA
+X.t_sims_flk_gps[i,] <- X.t
+
+#calculate S.hat
+MTSE_full <- multitaper_est(X.t, W = 0.0007, K = 5)
