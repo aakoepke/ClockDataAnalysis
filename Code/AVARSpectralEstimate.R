@@ -174,7 +174,7 @@ for(i in 1:N){
     W.star <- t(Conj(W_matlist[[i]]))
     W <- W_matlist[[j]]
     #Cov.mat[i,j] <- sum(abs(W.star%*%R.x%*%W)^2) #frobenius norm 
-    Cov.mat[i,j] <- sqrt(sum(abs(W%*%diag(x = 1, nrow = 67, ncol = 67)%*%W.star)^2)) #2-norm
+    Cov.mat[i,j] <- sqrt(sum(abs(W%*%diag(x = 1, nrow = length(X.t), ncol = length(X.t))%*%W.star)^2)) #2-norm
     j = j + 1
   }
 }
