@@ -142,7 +142,6 @@ delta.f <- f[2]
 
 
 r = 0
-##stopped at r = 7
 for(k in c(2^(0:9), floor(N/3))){
   r = r + 1
   tau = k
