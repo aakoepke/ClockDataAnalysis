@@ -1,14 +1,29 @@
 ### read in the file with functions
 # source("")
 
+
+numberOfSimulations = 4
+
+## keeping track of how long this all takes
+startTime=Sys.time()
+
+## saving the date to label file outputs
+runDate=format(Sys.Date(),"%m%d%y")
+
+
+### add in determination of W and K for this data pattern?
+setW = 0.00097
+setK = 5
+
 ######################################
 ###### Study 1: White Noise ##########
 ######   WN(0,1), no gaps    #########
 ######################################
-N <- 7200
-trfunc.vec <- bpvar.vec <- rep(NA, times = 300)
+# N <- 7200
+N = 2048 #didn't work for 720
+trfunc.vec <- bpvar.vec <- rep(NA, times = numberOfSimulations)
 
-tmat <- bmat <- matrix(NA, ncol = 300, nrow = 11)
+tmat <- bmat <- matrix(NA, ncol = numberOfSimulations, nrow = 11)
 
 f <- seq(0,0.5,length.out = N/2 + 1) #grid of frequencies
 delta.f <- f[2]
@@ -20,14 +35,14 @@ for(k in c(2^(0:9), floor(N/3))){
   tau = k
   print(paste("r = ", r))
   
-  for(i in 1:300){
+  for(i in 1:numberOfSimulations){
     print(i)
     set.seed(i)
     #generate X.t
     X.t <- rnorm(N,mean = 0, sd = 1)
     
     #calculate S.hat
-    MTSE_full <- multitaper_est(X.t, W = 0.00097, K = 5)
+    MTSE_full <- multitaper_est(X.t, W = setW, K = setK)
     
     #calculate bandpass variance
     
@@ -37,7 +52,7 @@ for(k in c(2^(0:9), floor(N/3))){
       bpvar.vec[i] <- 4*delta.f*(sum(MTSE_full$spectrum[f.min.index:(f.max.index - 1)]))
     }
     else{
-      f.min.index <- min(which(f>1/(4*tau) & f<1/(2*tau)))
+      f.min.index <- min(which(f>1/(4*tau) & f<1/(2*tau))) # some error here for some N choices, not sure what the issue is yet, but they return Inf and -Inf
       f.max.index <- max(which(f>1/(4*tau) & f<1/(2*tau)))
       if(f.min.index == f.max.index){
         bpvar.vec[i] <- 4*(MTSE_full$spectrum[f.min.index-1]*(f[f.min.index] - 1/(4*tau)) + MTSE_full$spectrum[f.min.index]*(1/(2*tau) - f[f.min.index]))
@@ -57,15 +72,23 @@ for(k in c(2^(0:9), floor(N/3))){
   bmat[r,] <- bpvar.vec
 }
 
+### print time to run this first part
+print(startTime-Sys.time())
 
-boxplot(tmat[6,], bmat[6,], oamat[,6])
+
+# out=list(tmat=tmat, bmat=bmat)
+# # likely need to save tmat and bmat to work with outside of the titans
+# saveRDS
+
+
+# boxplot(tmat[6,], bmat[6,], oamat[,6])
 
 
 ###also Calculate AVAR###
 
-amat <- oamat <- matrix(NA, nrow = 300, ncol = 11)
+amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = 11)
 
-for(i in 1:300){
+for(i in 1:numberOfSimulations){
   set.seed(i)
   print(i)
   #generate X.t
@@ -88,7 +111,7 @@ tmat %<>% t()
 bmat %<>% t()
 dim(bmat)
 three.mat <- rbind(oamat, tmat)
-method_labels <- rep(c("avar", "tr"), each = 300)
+method_labels <- rep(c("avar", "tr"), each = numberOfSimulations)
 df.messy <- as.data.frame(cbind(method_labels, three.mat))
 colnames(df.messy) <-c("method", taus)
 
