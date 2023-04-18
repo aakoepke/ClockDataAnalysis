@@ -120,4 +120,83 @@ AVAR_trfunc <- function(spectral_est, taus){
 }
 
 
+########## AVAR/OVAR Functions #######
+
+
+#calculates regular AVAR for a given tau and data (y)
+avar_fn <- function(y,tau){
+  n=length(y)
+  
+  div=seq(1,n,by = tau)
+  
+  M=length(div)-1 #number of groups
+  
+  groupmeans = numeric(M)
+  for(i in 1:M){
+    groupmeans[i]=mean(y[div[i]:(div[i+1]-1)])
+  }
+  
+  1/(2*(M-1)) * sum(diff(groupmeans)^2)
+}
+
+
+#calculates OVAR for a given averaging factor (m) and data (y)
+overlapping_avar_fn <- function(y,m){
+  
+  M=length(y)
+  
+  outer.sum = 0
+  for(j in 1:(M-2*m+1)){
+    sum = 0
+    for(i in j:(j + m - 1)){
+      sum = sum+ y[i+m] - y[i]
+    }
+    outer.sum = outer.sum + sum^2
+  }
+  
+  out <- 1/(2*m^2*(M - 2*m + 1))*outer.sum
+  
+  return(out)
+}
+
+
+#inputs: length of data (N), data (y), 
+#        vector of tau values at which you want AVAR/OVAR calculated (taus)
+#outputs:avarRes = data frame with taus, avar estimates, ovar estimates, slope/int fit
+#        SEests = SE estimates from the data and the truth? For white noise anyway, I'm not sure about this part
+getAvars <-  function(N, y,taus){
+  
+  avars=numeric(length(taus))
+  overlapping_avars= numeric(length(taus))
+  
+  for (i in 1:length(taus)){
+    avars[i]=avar_fn(y,taus[i])
+    overlapping_avars[i] = overlapping_avar_fn(y,taus[i])
+  }
+  
+  m1=data.frame(taus=taus,avars=avars)  
+  fit=lm(log(sqrt(avars))~log(taus),data = m1)
+  slope=as.numeric(fit$coefficients[2])
+  int=as.numeric(fit$coefficients[1])
+  
+  avarRes=data.frame(taus=taus,avars=avars, overavars=overlapping_avars,N=N,slope=slope,int=int)  
+  
+  ##########################################
+  # get SE
+  ##########################################
+  m2=data.frame(taus=taus,oavars=overlapping_avars)  
+  fit2=lm(log(sqrt(oavars))~log(taus),data = m2)
+  slope2=as.numeric(fit2$coefficients[2])
+  int2=as.numeric(fit2$coefficients[1])
+  
+  SEests=data.frame()
+  
+  onew=data.frame(N=N,out=exp(int2+slope2*log(N)), type="OAD")
+  new=data.frame(N=N,out=exp(int+slope*log(N)), type="AD")
+  new2=data.frame(N=N,out=sd(y)/sqrt(N), type="SE")
+  new3=data.frame(N=N,out=1/sqrt(N), type="true")
+  SEests=bind_rows(new,new2,new3,onew)
+  
+  return(list(avarRes=avarRes,SEests=SEests))
+}
 
