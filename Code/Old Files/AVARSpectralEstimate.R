@@ -129,17 +129,17 @@ return(out)
 ### to test out function below, run the following lines:
 
 #make a white noise process and add some NA values
-X.t_missing <- rnorm(300, mean = 0, sd = 0.01)
+X.t_missing <- rnorm(1000, mean = 0, sd = 1)
 X.t_missing[c(8:20,51:70, 200:220)] <- NA
 
 #get spectral estimate
-spec.est <- multitaper_est(X.t_missing,W=0.0325, K = 5) #0.09
+spec.est <- multitaper_est(X.t_missing,W=0.0125, K = 5) #0.09
 tapers <- spec.est$tapers
 t.vec <- 1:300
 t.n <- t.vec[which(!is.na(X.t_missing))]
 X.t <-  na.omit(X.t_missing)
 taus <-  2^(0:6)
-
+plot(tapers[,1])
 
 #this is where the function that calculates the variance of the
 #allan variance estimate, which is in progress:
@@ -174,7 +174,7 @@ for(i in 1:N){
     W.star <- t(Conj(W_matlist[[i]]))
     W <- W_matlist[[j]]
     #Cov.mat[i,j] <- sum(abs(W.star%*%R.x%*%W)^2) #frobenius norm 
-    Cov.mat[i,j] <- sqrt(sum(abs(W%*%diag(x = 1, nrow = length(X.t), ncol = length(X.t))%*%W.star)^2)) #2-norm
+    Cov.mat[i,j] <- sqrt(sum(abs(W.star%*%diag(x = 1, nrow = length(X.t), ncol = length(X.t))%*%W)^2)) #2-norm
     j = j + 1
   }
 }
