@@ -76,6 +76,7 @@ multitaper_est <- function(X.t, W, K){
   ##use tapers to generate spectral estimate
   N <- length(na.omit(t.n))
   S.x.hat_MD <- rep(NA, times = floor(N/2) + 1)
+  #freqs <- seq(0,0.5, length.out = floor(N/2) + 1)
   
   for(j in 0:floor(N/2)){
     k.vec <- rep(NA,times = K)
