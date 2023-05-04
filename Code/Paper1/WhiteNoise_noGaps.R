@@ -1,8 +1,13 @@
+##############################################
+##############################################
 ### read in the file with functions
-# source("")
+source("/home/aak3/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
 
+setwd("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/")
+##############################################
+##############################################
 
-numberOfSimulations = 4
+numberOfSimulations = 300
 
 ## keeping track of how long this all takes
 startTime=Sys.time()
@@ -10,8 +15,16 @@ startTime=Sys.time()
 ## saving the date to label file outputs
 runDate=format(Sys.Date(),"%m%d%y")
 
-
 ### add in determination of W and K for this data pattern?
+setW = 0.00097
+setK = 5
+
+setW = 0.00097
+setK = 5
+
+setW = 0.00097
+setK = 5
+
 setW = 0.00097
 setK = 5
 
@@ -20,7 +33,7 @@ setK = 5
 ######   WN(0,1), no gaps    #########
 ######################################
 # N <- 7200
-N = 2048 #didn't work for 720
+N = 2048 
 trfunc.vec <- bpvar.vec <- rep(NA, times = numberOfSimulations)
 
 tmat <- bmat <- matrix(NA, ncol = numberOfSimulations, nrow = 11)
@@ -76,84 +89,84 @@ for(k in c(2^(0:9), floor(N/3))){
 print(startTime-Sys.time())
 
 
-# out=list(tmat=tmat, bmat=bmat)
-# # likely need to save tmat and bmat to work with outside of the titans
-# saveRDS
+# likely need to save tmat and bmat to work with outside of the titans
+saveRDS(tmat,paste("tmat",runDate,"_W",setW,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+saveRDS(bmat,paste("bmat",runDate,"_W",setW,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
 
 
-# boxplot(tmat[6,], bmat[6,], oamat[,6])
-
-
-###also Calculate AVAR###
-
-amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = 11)
-
-for(i in 1:numberOfSimulations){
-  set.seed(i)
-  print(i)
-  #generate X.t
-  X.t <- rnorm(N,mean = 0, sd = 1)
-  
-  avar.calc <- getAvars(N,X.t, taus = c(2^(0:9), floor(N/3)))
-  amat[i,] <- avar.calc$avarRes$avars
-  oamat[i,] <- avar.calc$avarRes$overavars
-}
-
-#for plotting: bmat, tmat, amat/oamat
-
-
-### Plots ###
-N <- 2048
-taus <- c(2^(0:9),floor(N/3))
-
-##tidy the data
-tmat %<>% t()
-bmat %<>% t()
-dim(bmat)
-three.mat <- rbind(oamat, tmat)
-method_labels <- rep(c("avar", "tr"), each = numberOfSimulations)
-df.messy <- as.data.frame(cbind(method_labels, three.mat))
-colnames(df.messy) <-c("method", taus)
-
-
-dat <- df.messy %>% gather(tau, measurement, -method)
-
-dat$measurement <- as.numeric(dat$measurement)
-dat$tau <- as.numeric(dat$tau)
-
-#sumDat=dat %>% group_by(method,tau) %>%
-# summarise(median = median(measurement),
-#          lower25=quantile(measurement,prob=.25),
-#            upper75=quantile(measurement,prob=.75),
-#           min=min(measurement),
-#          max=max(measurement))
-
-breaks <- 10^(-10:10)
-minor_breaks <- rep(1:9,21 )*rep(10^(-10:10), each = 9)
-
-linedat_w=data.frame(tau=1:1000)
-linedat_w$truth=1/linedat_w$tau#+linedat$tau
-linedat_w$method=NA
-
-ggplot(dat,aes(tau,measurement,col=method,group=interaction(tau,method)))+
-  geom_boxplot(lwd = 1.2)+
-  ### add true straight line below
-  # geom_abline(slope = -1,intercept = 0,size=1)+
-  ### add true curved line below, calculate beforehand!
-  geom_line(data=linedat_w,aes(tau,truth), size = 1.2)+
-  ### This cahnges the legend title and labels
-  scale_color_discrete(labels= c("Allan","Spectral"),name="Method")+
-  # ### all this makes the plot look more like a base R plot
-  # theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-  #       panel.background = element_blank(), axis.line = element_line(colour = "black"))+
-  ### where to put legend. one option is "bottom", avoid having to place it. The tuple I have here 
-  ### basically specifies the x and y position in terms of the plot size in unit scale. 
-  theme_bw(base_size = 20)+
-  theme(legend.position = c(.15, .2))+
-  scale_y_log10(breaks = breaks, minor_breaks = minor_breaks)+
-  scale_x_log10(breaks = breaks, minor_breaks = minor_breaks)+
-  annotation_logticks()+
-  
-  ylab(expression(sigma^2*(tau)))+
-  xlab(expression(tau))+
-  ggtitle("White Noise Comparison, No Gaps")
+# # boxplot(tmat[6,], bmat[6,], oamat[,6])
+# 
+# 
+# ###also Calculate AVAR###
+# 
+# amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = 11)
+# 
+# for(i in 1:numberOfSimulations){
+#   set.seed(i)
+#   print(i)
+#   #generate X.t
+#   X.t <- rnorm(N,mean = 0, sd = 1)
+#   
+#   avar.calc <- getAvars(N,X.t, taus = c(2^(0:9), floor(N/3)))
+#   amat[i,] <- avar.calc$avarRes$avars
+#   oamat[i,] <- avar.calc$avarRes$overavars
+# }
+# 
+# #for plotting: bmat, tmat, amat/oamat
+# 
+# 
+# ### Plots ###
+# N <- 2048
+# taus <- c(2^(0:9),floor(N/3))
+# 
+# ##tidy the data
+# tmat %<>% t()
+# bmat %<>% t()
+# dim(bmat)
+# three.mat <- rbind(oamat, tmat)
+# method_labels <- rep(c("avar", "tr"), each = numberOfSimulations)
+# df.messy <- as.data.frame(cbind(method_labels, three.mat))
+# colnames(df.messy) <-c("method", taus)
+# 
+# 
+# dat <- df.messy %>% gather(tau, measurement, -method)
+# 
+# dat$measurement <- as.numeric(dat$measurement)
+# dat$tau <- as.numeric(dat$tau)
+# 
+# #sumDat=dat %>% group_by(method,tau) %>%
+# # summarise(median = median(measurement),
+# #          lower25=quantile(measurement,prob=.25),
+# #            upper75=quantile(measurement,prob=.75),
+# #           min=min(measurement),
+# #          max=max(measurement))
+# 
+# breaks <- 10^(-10:10)
+# minor_breaks <- rep(1:9,21 )*rep(10^(-10:10), each = 9)
+# 
+# linedat_w=data.frame(tau=1:1000)
+# linedat_w$truth=1/linedat_w$tau#+linedat$tau
+# linedat_w$method=NA
+# 
+# ggplot(dat,aes(tau,measurement,col=method,group=interaction(tau,method)))+
+#   geom_boxplot(lwd = 1.2)+
+#   ### add true straight line below
+#   # geom_abline(slope = -1,intercept = 0,size=1)+
+#   ### add true curved line below, calculate beforehand!
+#   geom_line(data=linedat_w,aes(tau,truth), size = 1.2)+
+#   ### This cahnges the legend title and labels
+#   scale_color_discrete(labels= c("Allan","Spectral"),name="Method")+
+#   # ### all this makes the plot look more like a base R plot
+#   # theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+#   #       panel.background = element_blank(), axis.line = element_line(colour = "black"))+
+#   ### where to put legend. one option is "bottom", avoid having to place it. The tuple I have here 
+#   ### basically specifies the x and y position in terms of the plot size in unit scale. 
+#   theme_bw(base_size = 20)+
+#   theme(legend.position = c(.15, .2))+
+#   scale_y_log10(breaks = breaks, minor_breaks = minor_breaks)+
+#   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks)+
+#   annotation_logticks()+
+#   
+#   ylab(expression(sigma^2*(tau)))+
+#   xlab(expression(tau))+
+#   ggtitle("White Noise Comparison, No Gaps")
