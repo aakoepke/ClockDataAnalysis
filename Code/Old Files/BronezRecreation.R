@@ -37,9 +37,9 @@ W <- matrix(w, nrow = length(t.n), ncol = L, byrow = TRUE)
 K.w <- apply(exp(-j*t.n*W), MARGIN = 2, FUN = sum)
 K.w.mag <- abs(K.w)
 length(K.w)
-#plot(w,K.w.mag, ylim = c(-80,45), type = "l")
+plot(w,K.w.mag, ylim = c(-80,45), type = "l")
 #lines(w,K.w.mag, ylim = c(-80,45), type = "l", col = "red")
-lines(w,K.w.mag, ylim = c(-80,45), type = "l", col = "bslue")
+lines(w,K.w.mag, ylim = c(-80,45), type = "l", col = "blue")
 
 
 #fixed center analysis band A: |f| < f_w for 0 < f < 0.1
@@ -138,7 +138,11 @@ matlines(f.c/(2*pi),gamma.k, ylim = c(-60,0), lty = 1)
 ###  which output the best K weighting sequences #
 ##################################################
 
-get.weights <- function(t.n = 1:50, K = 1, f.c = 0,f.w){
+#get.weights_bronez <- function(t.n = 1:50, K = 1, f.c, f.w){
+  t.n <- 1:50
+  K = 1
+  f.w <- 0.05
+  f.c <- 0
   N = length(t.n)
   dist.mat <- rdist(t.n)
   
@@ -146,37 +150,30 @@ get.weights <- function(t.n = 1:50, K = 1, f.c = 0,f.w){
   R.b <- 1/(pi*(dist.mat))*(sin(dist.mat*pi))
   R.b[row(R.b) == col(R.b)] <- 1
   
-  if(f.c != 0){
-  R.a <- (j/(2*pi*dist.mat))*(exp(j*(f.c - f.w)*dist.mat) - exp(j*(f.c + f.w)*dist.mat))
-  R.a[row(R.a) == col(R.a)] <- f.w*(2*pi)/(pi)
-  R.a[upper.tri(R.a)] <- Conj(R.a[lower.tri(R.a)])
-}
-else {
-  R.a <- 1/(pi*(dist.mat))*(sin(dist.mat*f.w))
+  R.a <- exp(j*2*pi*f.c*dist.mat)*(sin(2*pi*f.w*(dist.mat))/(pi*dist.mat))
+  R.a[row(R.a) == col(R.a)] <- f.w*2
   
-  R.a[row(R.a) == col(R.a)] <- f.w/(pi)
-}
   #Solve the generalized eigenvalue problem
   evs <- geigen(R.a,R.b, symmetric = TRUE)
   
   return(list("weights" = evs$vectors[,(N-K + 1):N], "eigenvalues" = sort(evs$values, decreasing = TRUE)[1:K]))
   
-}
+#}
 
 
 ##Example 1: best weighting sequence for regularly spaced data
 #(Figures 10 + 11)
 #f_c = 0, f_w = 0.05
-fig10 <- get.weights(f.w = 0.05*2*pi)
-plot(1:50,0.1*abs(fig10$weights)^2, ylim = c(0,0.01), type = "h")
+fig10 <- get.weights_bronez(f.w = 0.05)
+plot(1:50,abs(fig10$weights)^2, ylim = c(0,0.01), type = "h")
 
 
-plot(seq(0,1, length.out = length(fig10$weights)),abs(fft(fig10$weights)), type = "l")
+plot(seq(0,0.5, length.out = length(fig10$weights)),abs(fft(fig10$weights)), type = "l")
 
 
 
 #f_c = -0.3, f_w = 0.05
-fig11 <- get.weights(f.w = 0.05*2*pi, f.c = -0.3*2*pi)
+fig11 <- get.weights(f.w = 0.05, f.c = 0.3)
 plot(1:50,0.1*abs(fig11$weights)^2, ylim = c(0,0.01), type = "h")
 
 plot(seq(0,1, length.out = length(fig11$weights)),abs(fft(fig11$weights)), type = "h")
