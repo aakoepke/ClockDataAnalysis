@@ -16,17 +16,23 @@ startTime=Sys.time()
 runDate=format(Sys.Date(),"%m%d%y")
 
 ### add in determination of W and K for this data pattern?
-setW = 0.00097
+setW = 12/2048
+setK = 3
+
+setW = 12/2048
+setK = 4
+
+setW = 12/2048
 setK = 5
 
-setW = 0.00097
-setK = 5
+setW = 4/2048
+setK = 3
 
-setW = 0.00097
-setK = 5
+setW = 4/2048
+setK = 4
 
-setW = 0.00097
-setK = 5
+setW = 4/2048
+setK = 6
 
 ######################################
 ###### Study 1: White Noise ##########
