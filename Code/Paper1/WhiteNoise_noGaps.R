@@ -1,9 +1,11 @@
+# source("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
+
 ##############################################
 ##############################################
 ### read in the file with functions
-source("/home/aak3/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
 
 setwd("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/")
+source("../SA_ImportantFunctions.R")
 ##############################################
 ##############################################
 
@@ -16,24 +18,38 @@ startTime=Sys.time()
 runDate=format(Sys.Date(),"%m%d%y")
 
 ### add in determination of W and K for this data pattern?
-setW = 12/2048
-setK = 3
-
-# setW = 12/2048
-# setK = 4
-# 
-# setW = 12/2048
-# setK = 5
-# 
-# setW = 4/2048
+###run1
+# setWnum = 12
+# setW = setWnum/2048
 # setK = 3
-# 
-# setW = 4/2048
-# setK = 4
-# 
-# setW = 4/2048
-# setK = 6
 
+###run2
+# setWnum = 12
+# setW = setWnum/2048
+# setK = 4
+
+###run3
+# setWnum = 12
+# setW = setWnum/2048
+# setK = 5
+
+###run4
+# setWnum = 4
+# setW = setWnum/2048
+# setK = 3
+
+###run5
+# setWnum = 4
+# setW = setWnum/2048
+# setK = 4
+
+###run6
+setWnum = 4
+setW = setWnum/2048
+setK = 6
+
+print(setWnum)
+print(setK)
 ######################################
 ###### Study 1: White Noise ##########
 ######   WN(0,1), no gaps    #########
@@ -96,8 +112,8 @@ print(startTime-Sys.time())
 
 
 # likely need to save tmat and bmat to work with outside of the titans
-saveRDS(tmat,paste("tmat",runDate,"_W",setW,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
-saveRDS(bmat,paste("bmat",runDate,"_W",setW,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+saveRDS(tmat,paste("tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+saveRDS(bmat,paste("bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
 
 
 # # boxplot(tmat[6,], bmat[6,], oamat[,6])
