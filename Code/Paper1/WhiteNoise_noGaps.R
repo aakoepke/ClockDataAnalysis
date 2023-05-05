@@ -19,20 +19,20 @@ runDate=format(Sys.Date(),"%m%d%y")
 setW = 12/2048
 setK = 3
 
-setW = 12/2048
-setK = 4
-
-setW = 12/2048
-setK = 5
-
-setW = 4/2048
-setK = 3
-
-setW = 4/2048
-setK = 4
-
-setW = 4/2048
-setK = 6
+# setW = 12/2048
+# setK = 4
+# 
+# setW = 12/2048
+# setK = 5
+# 
+# setW = 4/2048
+# setK = 3
+# 
+# setW = 4/2048
+# setK = 4
+# 
+# setW = 4/2048
+# setK = 6
 
 ######################################
 ###### Study 1: White Noise ##########
