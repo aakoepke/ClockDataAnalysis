@@ -1,10 +1,13 @@
 # source("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
+# source("/home/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
 
 ##############################################
 ##############################################
 ### read in the file with functions
 
-setwd("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/")
+# setwd("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/")
+# setwd("/home/cmb15/ClockDataAnalysis/Code/Paper1/")
+
 source("../SA_ImportantFunctions.R")
 ##############################################
 ##############################################
