@@ -3,6 +3,34 @@
 #this is a script to try things out before they go in real scripts
 
 
+
+###Bronez tapers vs. ours
+
+X.t <- rnorm(50)
+#calculate using Chave
+our.MTSE <- multitaper_est(X.t, W = 0.05, K = 1)
+#calculate using 
+fig10 <- get.weights_bronez(f.w = 0.05)
+
+plot(abs(evs$vectors[,50]))
+
+w_1 <- evs$vectors[,50]
+Conj(w_1)%*%R.b%*%w_1*0.1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #test out the functions in AVARSpectralEstimate file
 
 X.t <- X.t_missing <- rnorm(300)
@@ -95,13 +123,3 @@ saved <- acf(X.t_missing, na.action = na.pass, lag.max = 100)
       
 
 
-
-
-
-
-X.t <- TK95(N = 5224, alpha = 1)
-X.t[c(100:500,1300:1400, 1700:1874, 3000:3450)] <- NA
-X.t_sims_flk_gps[i,] <- X.t
-
-#calculate S.hat
-MTSE_full <- multitaper_est(X.t, W = 0.0007, K = 5)

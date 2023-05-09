@@ -138,11 +138,7 @@ matlines(f.c/(2*pi),gamma.k, ylim = c(-60,0), lty = 1)
 ###  which output the best K weighting sequences #
 ##################################################
 
-#get.weights_bronez <- function(t.n = 1:50, K = 1, f.c, f.w){
-  t.n <- 1:50
-  K = 1
-  f.w <- 0.05
-  f.c <- 0
+get.weights_bronez <- function(t.n = 1:50, K = 1, f.c = 0, f.w){
   N = length(t.n)
   dist.mat <- rdist(t.n)
   
@@ -156,9 +152,8 @@ matlines(f.c/(2*pi),gamma.k, ylim = c(-60,0), lty = 1)
   #Solve the generalized eigenvalue problem
   evs <- geigen(R.a,R.b, symmetric = TRUE)
   
-  return(list("weights" = evs$vectors[,(N-K + 1):N], "eigenvalues" = sort(evs$values, decreasing = TRUE)[1:K]))
-  
-#}
+  return(list("weights" = evs$vectors[,(N-K + 1):N]*sqrt(2*f.w), "eigenvalues" = sort(evs$values, decreasing = TRUE)[1:K]))
+}
 
 
 ##Example 1: best weighting sequence for regularly spaced data
@@ -168,26 +163,26 @@ fig10 <- get.weights_bronez(f.w = 0.05)
 plot(1:50,abs(fig10$weights)^2, ylim = c(0,0.01), type = "h")
 
 
-plot(seq(0,0.5, length.out = length(fig10$weights)),abs(fft(fig10$weights)), type = "l")
-
-
+plot(abs(fft(fig10$weights)), type = "l")
 
 #f_c = -0.3, f_w = 0.05
-fig11 <- get.weights(f.w = 0.05, f.c = 0.3)
-plot(1:50,0.1*abs(fig11$weights)^2, ylim = c(0,0.01), type = "h")
+fig11 <- get.weights_bronez(f.w = 0.05, f.c = -0.3)
+plot(1:50,abs(fig11$weights)^2, ylim = c(0,0.01), type = "h")
 
-plot(seq(0,1, length.out = length(fig11$weights)),abs(fft(fig11$weights)), type = "h")
-abline(v = 0.7)
+plot(seq(0,1, length.out = length(fig11$weights)),abs(fft(fig11$weights)), type = "l")
 
 
 ##Example 2: best weighting sequence for arithmetically spaced data
 #(Figures 12 + 13)
 #f_c = 0, f_w = 0.05
-fig12 <- get.weights(t.n = t.n, f.w = 0.05*2*pi)
-plot(t.n,0.1*abs(fig12$weights)^2/pi,ylim = c(0,0.01),type = "h")
+n <- 1:50
+t.n <- 0.625 + 0.3625*n + 0.0125*n^2 
+fig12 <- get.weights_bronez(t.n = t.n, f.w = 0.05)
+plot(n,abs(fig12$weights)^2,ylim = c(0,0.01),type = "h")
+
+#plot(seq(0,1, length.out = length(fig12$weights)),abs(fft(fig12$weights)), type = "l")
 
 
-plot(seq(0,1, length.out = length(fig12$weights)),abs(fft(fig12$weights)), type = "l")
 
 
 
