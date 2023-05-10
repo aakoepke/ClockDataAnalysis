@@ -18,6 +18,19 @@ w_1 <- evs$vectors[,50]
 Conj(w_1)%*%R.b%*%w_1*0.1
 
 
+t.n  <- 1:2
+N = length(t.n)
+dist.mat <- rdist(t.n)
+
+#B = [-pi,pi] for omega or [-1/2,1/2] for f
+R.b <- 1/(pi*(dist.mat))*(sin(dist.mat*pi))
+R.b[row(R.b) == col(R.b)] <- 1
+
+R.a <- exp(j*2*pi*f.c*dist.mat)*(sin(2*pi*f.w*(dist.mat))/(pi*dist.mat))
+R.a[row(R.a) == col(R.a)] <- f.w*2
+
+#Solve the generalized eigenvalue problem
+evs <- geigen(R.a,R.b, symmetric = TRUE)
 
 
 
