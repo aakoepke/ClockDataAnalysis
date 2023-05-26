@@ -162,14 +162,13 @@ get.weights_bronez <- function(t.n = 1:50, K = 1, f.c = 0, f.w){
 fig10 <- get.weights_bronez(f.w = 0.05)
 plot(1:50,abs(fig10$weights)^2, ylim = c(0,0.01), type = "h")
 
-
-plot(abs(fft(fig10$weights)), type = "l")
+#plot(abs(fft(fig10$weights)), type = "l")
 
 #f_c = -0.3, f_w = 0.05
 fig11 <- get.weights_bronez(f.w = 0.05, f.c = -0.3)
 plot(1:50,abs(fig11$weights)^2, ylim = c(0,0.01), type = "h")
 
-plot(seq(0,1, length.out = length(fig11$weights)),abs(fft(fig11$weights)), type = "l")
+#plot(seq(0,1, length.out = length(fig11$weights)),abs(fft(fig11$weights)), type = "l")
 
 
 ##Example 2: best weighting sequence for arithmetically spaced data
@@ -183,11 +182,8 @@ plot(n,abs(fig12$weights)^2,ylim = c(0,0.01),type = "h")
 #plot(seq(0,1, length.out = length(fig12$weights)),abs(fft(fig12$weights)), type = "l")
 
 
-
-
-
 #f_c = -0.3, f_w = 0.05
-fig13 <- get.weights(f.w = 0.05*2*pi, f.c = -0.3*2*pi, t.n = t.n)
+fig13 <- get.weights_bronez(f.w = 0.05, f.c = -0.3, t.n = t.n)
 plot(1:50,0.1*abs(fig13$weights),ylim = c(0,0.05), type = "h")
 
 plot(seq(0,1, length.out = length(fig13$weights)),abs(fft(fig13$weights)), type = "l")

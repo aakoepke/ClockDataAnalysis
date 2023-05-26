@@ -32,17 +32,16 @@ R.a[row(R.a) == col(R.a)] <- f.w*2
 #Solve the generalized eigenvalue problem
 evs <- geigen(R.a,R.b, symmetric = TRUE)
 
+eig <- eigen(R.a)
 
+R.a%*%eig$vectors
+eig$vectors*eig$values
 
-
-
-
-
-
-
-
-
-
+l_1 <- eig$values[1]
+l_2 <- eig$values[2]
+a <- 0.1-l_2
+b <- sin(0.1*pi)/pi
+b/a
 
 #test out the functions in AVARSpectralEstimate file
 
