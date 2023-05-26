@@ -1,5 +1,6 @@
 # source("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
-# source("/home/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
+ source("/Users/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
+ source("SA_ImportantFunctions.R")
 #test
 ##############################################
 ##############################################
@@ -8,7 +9,7 @@
 # setwd("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/")
 # setwd("/home/cmb15/ClockDataAnalysis/Code/Paper1/")
 
-source("../SA_ImportantFunctions.R")
+# source("../SA_ImportantFunctions.R")
 ##############################################
 ##############################################
 
