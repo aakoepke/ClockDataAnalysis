@@ -7,6 +7,7 @@ library(tidyverse)
 library(RSpectra) #eigensolving
 library(fields) #dist.mat
 library(RobPer) #flicker noise
+library(arfima) #acvf for arfima
 
 ###########################
 #### things we'll need ####
@@ -199,5 +200,31 @@ getAvars <-  function(N, y,taus){
   SEests=bind_rows(new,new2,new3,onew)
   
   return(list(avarRes=avarRes,SEests=SEests))
+}
+
+##calculates the true allan variance for ARFIMA(0,d,0)
+#inputs: N.tau - max tau value you are looking for
+#        d - parameter
+#        sig.2.a - variance of white noise process in arfima
+#output: vector of length N.tau-1 with  
+
+tavar_ARFIMA <- function(N.tau,d, sig.2.a){
+  rho.vec <- tacvfARFIMA(phi = 0, theta = 0, dfrac = d, maxlag = 2*N.tau)
+  corr.vec <- rho.vec/max(rho.vec) #normalize
+  taus <- 2:N.tau
+  
+  sum.vec <- rep(NA, times = N.tau-1)
+  for(k in 2:N.tau){
+    #print(k)
+    total <- 0
+    for(i in 1:(k - 1)){
+      print(i) 
+      total = total + i*(2*corr.vec[k-i + 1] - corr.vec[i + 1] - corr.vec[2*k-i + 1])
+    }
+    sum.vec[k-1] <- total
+  }
+  numerator <-(taus*(rep(corr.vec[1],times = N.tau-1) - corr.vec[3:(N.tau+1)]) + sum.vec)*gamma(1-2*d)
+  denom <- (taus*gamma(1-d))^2
+  return(numerator/denom)
 }
 
