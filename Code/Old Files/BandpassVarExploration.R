@@ -9,6 +9,32 @@ library(magrittr)
 library(RobPer) #flicker noise
 
 ## Bandpass Variance or Transfer Function comparison to AVAR
+
+############ considering integrate() function in R##############
+#grid of frequencies
+freqs <- 0:3
+spec.values <- c(1,3,5,7)
+
+integrate(approxfun(freqs, spec.values), lower = 0.35, upper = 1.5)
+##Uses Gauss-Kronrod quadrature
+#################################################################
+
+############### try this on a spectral estimate #################
+N <- 2048
+X.t <- rnorm(N,mean = 0, sd = 1)
+f <- seq(0,0.5,length.out = N/2 + 1) #grid of frequencies
+delta.f <- f[2]
+
+#calculate S.hat
+MTSE_temp <- multitaper_est(X.t, W = 0.001953125, K = 8)
+tau = 2
+
+test <- approxfun(f, MTSE_full$spectrum)
+integrate(test, lower = 1/(4), upper = 1/(2), subdivisions = 1000)
+
+
+
+
 delta.f <- f[2] #delta f, distance between each frequency in the frequency grid
 
 #bandpass variance

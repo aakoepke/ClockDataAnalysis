@@ -218,7 +218,7 @@ tavar_ARFIMA <- function(N.tau,d, sig.2.a){
     #print(k)
     total <- 0
     for(i in 1:(k - 1)){
-      print(i) 
+      #print(i) 
       total = total + i*(2*corr.vec[k-i + 1] - corr.vec[i + 1] - corr.vec[2*k-i + 1])
     }
     sum.vec[k-1] <- total
