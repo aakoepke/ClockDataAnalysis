@@ -1,20 +1,63 @@
 ### read in the file with functions
 # source("") 
 
+
+
+numberOfSimulations = 300
+N <- 2048
+## keeping track of how long this all takes
+startTime=Sys.time()
+
+## saving the date to label file outputs
+runDate=format(Sys.Date(),"%m%d%y")
+
+### add in determination of W and K for this data pattern?
+###run1
+# setWnum = 12
+# setW = setWnum/N
+# setK = 3
+
+###run2
+# setWnum = 12
+# setW = setWnum/N
+# setK = 4
+
+###run3
+# setWnum = 12
+# setW = setWnum/N
+# setK = 5
+
+###run4
+# setWnum = 4
+# setW = setWnum/N
+# setK = 3
+
+###run5
+# setWnum = 4
+# setW = setWnum/N
+# setK = 4
+
+###run6
+setWnum = 4
+setW = setWnum/N
+setK = 6
+
+print(setWnum)
+print(setK)
+
 ######################################
 ###### Study 2: Flicker Noise ########
 ######      with  gaps     ###########
 ######################################
 
-N <- 4096
-trfunc.vec <- bpvar.vec <- rep(NA, times = 300)
+trfunc.vec <- bpvar.vec <- rep(NA, times = numberOfSimulations)
 
-tmat_flk_gps <- bmat_flk_gps <- matrix(NA, ncol = 300, nrow = 11)
+tmat_flk_gps <- bmat_flk_gps <- matrix(NA, ncol = numberOfSimulations, nrow = 11)
 
 f <- seq(0,0.5,length.out = N/2 + 1) #grid of frequencies
 delta.f <- f[2]
 
-X.t_sims_flk_gps <- matrix(NA, nrow = 300, ncol = (4096 + 1128)) #add in extras for the NAs we will be creating
+X.t_sims_flk_gps <- matrix(NA, nrow = numberOfSimulations, ncol = (4096 + 1128)) #add in extras for the NAs we will be creating
 g = 0
 for(k in c(2^(0:9), floor(N/3))){
   g = g + 1

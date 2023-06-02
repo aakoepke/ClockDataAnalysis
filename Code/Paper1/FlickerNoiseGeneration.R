@@ -22,7 +22,7 @@ X.t_sims_flk <- matrix(NA, nrow = numberOfSimulations, ncol = N)
 
 for(i in 1:numberOfSimulations){
   set.seed(i)
-  X.t_sims_flk[i,] <-  TK95(N = N, alpha = 1)
+  X.t_sims_flk[i,] <-  arfima.sim(N,model = list(dfrac = 0.49))
 }
 
 
