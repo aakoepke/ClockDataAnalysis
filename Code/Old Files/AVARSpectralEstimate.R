@@ -160,12 +160,7 @@ f <- seq(0,0.5, length.out = floor(length(t.n))/2 + 1)
 #Calculate Cov matrix C
 N <- length(f)
 Cov.mat <- matrix(NA, nrow = N, ncol = N)
-W_matlist <- list()
 
-for(i in 1:N){
-  print(i)
-  W_matlist[[i]] <- t(tapers)%*%exp(-im*2*pi*f[i]*dist.mat)
-}
 
 for(i in 1:N){
   print(i)
@@ -174,7 +169,7 @@ for(i in 1:N){
     W.star <- t(Conj(W_matlist[[i]]))
     W <- W_matlist[[j]]
     #Cov.mat[i,j] <- sum(abs(W.star%*%R.x%*%W)^2) #frobenius norm 
-    Cov.mat[i,j] <- sqrt(sum(abs(W.star%*%diag(x = 1, nrow = length(X.t), ncol = length(X.t))%*%W)^2)) #2-norm
+    Cov.mat[i,j] <- sqrt(sum(abs(W.star%*%W)^2)) #2-norm
     j = j + 1
   }
 }
