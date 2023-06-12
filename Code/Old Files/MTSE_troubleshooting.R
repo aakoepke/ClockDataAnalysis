@@ -177,10 +177,14 @@ fig_true_and_est_sdfs(tapers_all[,1:8],expression(italic(K == 8)),main="Figure 3
 
 mtse_ar4 <- multitaper_est(X.t = ar4_1, W = 0.00390625, K = 5)
 
+tapers_new_ar4 <- get_tapers(X.t = ar4_1, W = 0.00390625, K = 5)
+mtse_new_ar4 <- MT_spectralEstimate(X.t = ar4_1, V.mat = tapers_new_ar4)
+
 mtse_sauts <- mt_sdf_est(ar4_1,tapers_all[,1:5],center=FALSE)
 
 plot(seq(0,0.5, length.out = length(mtse_ar4$spectrum)), 10*log10(mtse_ar4$spectrum))
 lines(mtse_sauts$freqs, dB(mtse_sauts$sdfe), col = "red")
+lines(mtse_new_ar4$freqs, dB(mtse_new_ar4$spectrum), col = "blue")
 
 
 ##they match! woohoo!
