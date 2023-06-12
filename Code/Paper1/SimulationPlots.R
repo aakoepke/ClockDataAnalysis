@@ -9,7 +9,7 @@ bmat <- readRDS("Results/bmat050523_W12_K4_N2048_300sims_WhiteNoiseNoGaps.Rds")
 oamat <- readRDS(file = "Results/oamat052623_N2048_300sims_WhiteNoiseNoGaps.Rds")
 
 ### Plots ###
-N <- 2048
+N <- 1024
 taus <- c(2^(0:9),floor(N/3))
 numberOfSimulations = 300
 
