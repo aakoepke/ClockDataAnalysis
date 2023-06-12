@@ -171,7 +171,6 @@ MT_spectralEstimate <- function(X.t, V.mat){
   
   ##use tapers to generate spectral estimate
   N <- length(na.omit(t.n))
-  print(N)
   S.x.hat <- rep(NA, times = floor(N/2) + 1)
   freqs <- seq(0,0.5, length.out = floor(N/2) + 1)
   K <- dim(V.mat)[2]
