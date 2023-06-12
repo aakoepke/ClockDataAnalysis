@@ -98,15 +98,9 @@ multitaper_est <- function(X.t, W, K){
 ####### 1. get_tapers() ########
 ####### 2. calculate estimate ######
 
-#input: X.t = time series of length N (possibly with NA values), W = analysis half bandwidth, K = number of tapers
+#input: t.n = time points of length N (possibly with NA values), W = analysis half bandwidth, K = number of tapers
 #output: L x K matrix of tapers where L = length of time series without missing values, K = number of tapers
-get_tapers <- function(X.t, W, K){
-  N.long <- length(X.t)
-  t.n <- 1:N.long
-  missing.indices <- which(is.na(X.t))
-  t.n[which(is.na(X.t))] <- NA
-  
-  
+get_tapers <- function(t.n, W, K){
   dist.mat <- rdist(na.omit(t.n))
   
   #create the A' matrix (Chave 2019 equation (22))
