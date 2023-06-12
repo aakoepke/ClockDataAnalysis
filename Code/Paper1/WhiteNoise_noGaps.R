@@ -59,13 +59,17 @@ print(setK)
 ######   WN(0,1), no gaps    #########
 ######################################
 # N <- 7200
-N = 2048 
+N = 1024 
 trfunc.vec <- bpvar.vec <- rep(NA, times = numberOfSimulations)
 
 tmat <- bmat <- matrix(NA, ncol = numberOfSimulations, nrow = 11)
 
 f <- seq(0,0.5,length.out = N/2 + 1) #grid of frequencies
 delta.f <- f[2]
+
+##calculate tapers
+t.n <- 1:N
+V.mat <- get_tapers(t.n, W = setW, K = setK)
 
 
 r = 0
@@ -81,25 +85,11 @@ for(k in c(2^(0:9), floor(N/3))){
     X.t <- rnorm(N,mean = 0, sd = 1)
     
     #calculate S.hat
-    MTSE_full <- multitaper_est(X.t, W = setW, K = setK)
+    MTSE_full <- MT_spectralEstimate(X.t, V.mat)
     
     #calculate bandpass variance
-    
-    if(sum(f-1/(4*tau) == 0) & sum(f-1/(2*tau) == 0)){
-      f.min.index <- which(f == 1/(4*tau))
-      f.max.index <- which(f == 1/(2*tau))
-      bpvar.vec[i] <- 4*delta.f*(sum(MTSE_full$spectrum[f.min.index:(f.max.index - 1)]))
-    }
-    else{
-      f.min.index <- min(which(f>1/(4*tau) & f<1/(2*tau))) # some error here for some N choices, not sure what the issue is yet, but they return Inf and -Inf
-      f.max.index <- max(which(f>1/(4*tau) & f<1/(2*tau)))
-      if(f.min.index == f.max.index){
-        bpvar.vec[i] <- 4*(MTSE_full$spectrum[f.min.index-1]*(f[f.min.index] - 1/(4*tau)) + MTSE_full$spectrum[f.min.index]*(1/(2*tau) - f[f.min.index]))
-      }
-      else{
-        bpvar.vec[i] <- 4*delta.f*(sum(MTSE_full$spectrum[f.min.index:f.max.index]) + (f[f.min.index] - 1/(4*tau)) + (1/(2*tau) - f[f.max.index]) )
-      }
-    }
+    temp_bp <- integrate(approxfun(f, MTSE_full$spectrum), lower = 1/(4*tau), upper = 1/(2*tau), subdivisions = 1000)
+    bpvar.vec[i] <- 4*temp_bp$value
     
     #calculate transfer function AVAR
     G.vec <- transfer.func(f, tau)

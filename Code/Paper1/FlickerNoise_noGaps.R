@@ -12,7 +12,7 @@ library(tidyverse)
 #source("/home/cmb15/ClockDataAnalysis/Code/Paper1/FlickerNoise_noGaps.R")
 
 numberOfSimulations = 300
-N <- 2048
+
 ## keeping track of how long this all takes
 startTime=Sys.time()
 
@@ -46,9 +46,9 @@ runDate=format(Sys.Date(),"%m%d%y")
 # setK = 4
 
 ###run6
-# setWnum = 4
-# setW = setWnum/N
-# setK = 5
+setWnum = 4
+setW = setWnum/N
+setK = 6
 
 ###run7
 # setWnum = 4
@@ -59,10 +59,10 @@ Wnums <- 6:10
 Ks <- 2*Wnums -1
 
 
-for(w in 1:length(Wnums)){
-    setWnum = Wnums[w]
-    setW = setWnum/N
-    setK = Ks[w]
+# for(w in 1:length(Wnums)){
+#     setWnum = Wnums[w]
+#     setW = setWnum/N
+#     setK = Ks[w]
     
 print(setWnum)
 print(setK)
@@ -71,7 +71,7 @@ print(setK)
 ###### Study 2a: Flicker Noise ########
 ######      with no gaps     ##########
 #######################################
-
+N <- 1024
 trfunc.vec <- bpvar.vec <- rep(NA, times = numberOfSimulations)
 
 tmat <- bmat <- matrix(NA, ncol = numberOfSimulations, nrow = 11)
@@ -79,22 +79,25 @@ tmat <- bmat <- matrix(NA, ncol = numberOfSimulations, nrow = 11)
 f <- seq(0,0.5,length.out = N/2 + 1) #grid of frequencies
 delta.f <- f[2]
 
+##calculate tapers
+t.n <- 1:N
+V.mat <- get_tapers(t.n, W = setW, K = setK)
 
-X.t_sims_flk <- readRDS("Results/FlickerSims_noGaps_N2048_300.Rds")
+X.t_sims_flk <- readRDS("//cfs2w.nist.gov/unix$/776unix/cmb15/ClockDataAnalysis/Code/Paper1/Results/FlickerSims_noGaps_N2048_300.Rds")
 
 g = 0
-for(k in c(2^(0:9), floor(N/3))){
+for(k in c(2^(0:8), floor(N/3))){
   g = g + 1
   tau = k
-
   for(i in 1:numberOfSimulations){
     print(i)
     print(paste("g = ", g))
+    set.seed(i)
     #get ith simulation
-    X.t <- X.t_sims_flk[i,]
+    X.t <- arfima.sim(N, model = list(dfrac = 0.499))
     
     #calculate S.hat
-    MTSE_full <- multitaper_est(X.t, W = setW, K = setK)
+    MTSE_full <- MT_spectralEstimate(X.t, V.mat)
     
     #calculate bandpass variance
     temp_bp <- integrate(approxfun(f, MTSE_full$spectrum), lower = 1/(4*tau), upper = 1/(2*tau), subdivisions = 1000)
@@ -132,5 +135,5 @@ saveRDS(bmat,paste("Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numb
 # saveRDS(amat,paste("Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseNoGaps.Rds",sep=""))
 # saveRDS(oamat,paste("Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseNoGaps.Rds",sep=""))
 
-}
+# }
 
