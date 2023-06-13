@@ -54,12 +54,6 @@ for(i in 1:N.fourier){
 
 
 
-
-
-mult.exp <- function(x,f){
-  x*exp(im*2*pi*f*1:length(x))
-}
-
 ############# treating exp like a vector #############
 N = 2048
 t.vec <- 1:N #time vector
@@ -73,7 +67,7 @@ MTSE_test_spec <- MT_spectralEstimate(X.t = X.t, V.mat = MTSE_test_tapers)
 
 ##Get V, V* matrix
 V <- MTSE_test_tapers
-
+sum(abs(t(V[,1]*exp(im*2*pi*freq[10]*1:N))%*%(V[,1]*exp(-im*2*pi*freq[129]*1:N)))^2)
 
 N <- dim(V)[1]
 time.vec <- dist.mat[1,]
@@ -82,12 +76,12 @@ freq <- seq(0,0.5, length.out = N.fourier)
 Cov.mat <- matrix(NA, ncol = N.fourier, nrow = N.fourier)
 
 for(i in 1:N.fourier){
-V.exp.i <- V*exp(-im*2*pi*freq[i]*time.vec)
+V.exp.i <- V*exp(-im*2*pi*freq[i]*1:N)
   print(i)
   j = 1
   while(j <= i){
-    V.exp.j <- V*exp(-im*2*pi*freq[j]*time.vec)
-    Cov.mat[i,j] <- norm(Conj(t(V.exp.i))%*%V.exp.j, type = "2") #norm(V_star%*%exp(im*2*pi*freq[i]*dist.mat)%*%exp(-im*2*pi*freq[j]*dist.mat)%*%V, type = "2")*(A.size/numTapers)^2
+    V.exp.j <- V*exp(-im*2*pi*freq[j]*1:N)
+    Cov.mat[i,j] <- norm(Conj(t(V.exp.i))%*%V.exp.j, type = "F") #norm(V_star%*%exp(im*2*pi*freq[i]*dist.mat)%*%exp(-im*2*pi*freq[j]*dist.mat)%*%V, type = "2")*(A.size/numTapers)^2
     j = j+1
   }
 }
