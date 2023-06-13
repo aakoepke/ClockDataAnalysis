@@ -268,30 +268,30 @@ getAvars <-  function(N, y,taus){
     overlapping_avars[i] = overlapping_avar_fn(y,taus[i])
   }
   
-  m1=data.frame(taus=taus,avars=avars)  
-  fit=lm(log(sqrt(avars))~log(taus),data = m1)
-  slope=as.numeric(fit$coefficients[2])
-  int=as.numeric(fit$coefficients[1])
+  # m1=data.frame(taus=taus,avars=avars)  
+  # fit=lm(log(sqrt(avars))~log(taus),data = m1)
+  # slope=as.numeric(fit$coefficients[2])
+  # int=as.numeric(fit$coefficients[1])
   
-  avarRes=data.frame(taus=taus,avars=avars, overavars=overlapping_avars,N=N,slope=slope,int=int)  
+  avarRes=data.frame(taus=taus,avars=avars, overavars=overlapping_avars) #,N=N,slope=slope,int=int)  
   
   ##########################################
   # get SE
   ##########################################
-  m2=data.frame(taus=taus,oavars=overlapping_avars)  
-  fit2=lm(log(sqrt(oavars))~log(taus),data = m2)
-  slope2=as.numeric(fit2$coefficients[2])
-  int2=as.numeric(fit2$coefficients[1])
-  
-  SEests=data.frame()
-  
-  onew=data.frame(N=N,out=exp(int2+slope2*log(N)), type="OAD")
-  new=data.frame(N=N,out=exp(int+slope*log(N)), type="AD")
-  new2=data.frame(N=N,out=sd(y)/sqrt(N), type="SE")
-  new3=data.frame(N=N,out=1/sqrt(N), type="true")
-  SEests=bind_rows(new,new2,new3,onew)
-  
-  return(list(avarRes=avarRes,SEests=SEests))
+  # m2=data.frame(taus=taus,oavars=overlapping_avars)  
+  # fit2=lm(log(sqrt(oavars))~log(taus),data = m2)
+  # slope2=as.numeric(fit2$coefficients[2])
+  # int2=as.numeric(fit2$coefficients[1])
+  # 
+  # SEests=data.frame()
+  # 
+  # onew=data.frame(N=N,out=exp(int2+slope2*log(N)), type="OAD")
+  # new=data.frame(N=N,out=exp(int+slope*log(N)), type="AD")
+  # new2=data.frame(N=N,out=sd(y)/sqrt(N), type="SE")
+  # new3=data.frame(N=N,out=1/sqrt(N), type="true")
+  # SEests=bind_rows(new,new2,new3,onew)
+  # 
+  return(list(avarRes=avarRes)) #,SEests=SEests
 }
 
 ##calculates the true allan variance for ARFIMA(0,d,0)
