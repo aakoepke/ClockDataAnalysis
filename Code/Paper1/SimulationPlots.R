@@ -77,10 +77,12 @@ oamat_flk <- readRDS(file = "Results/oamat053123_N2048_300sims_FlickerNoiseNoGap
 
 
 ### Plots ###
-N <- 2048
-taus <- c(2^(0:9),floor(N/3))
+N <- 1024
+taus <- c(2^(0:8),floor(N/3))
 numberOfSimulations = 300
-
+tmat_flk <- tmat
+bmat_flk <- bmat
+oamat_flk <- oamat
 ##tidy the data
 tmat_flk %<>% t()
 bmat_flk %<>% t()
@@ -99,16 +101,16 @@ dat$tau <- as.numeric(dat$tau)
 breaks <- 10^(-10:10)
 minor_breaks <- rep(1:9,21 )*rep(10^(-10:10), each = 9)
 
-#linedat = data.frame(tau=2:floor(N/3))
-#linedat$truth = tavar_ARFIMA(floor(N/3), d = 0.49, sig.2.a = 1)
-#linedat$method = NA
+# linedat = data.frame(tau=2:floor(N/3))
+# linedat$truth = tavar_ARFIMA(floor(N/3), d = 0.25, sig.2.a = 1)
+# linedat$method = NA
 
 ggplot(dat,aes(tau,measurement,col=method,group=interaction(tau,method)))+
   geom_boxplot(lwd = 1.2)+
   ### add true straight line below
   # geom_abline(slope = -1,intercept = 0,size=1)+
   ### add true curved line below, calculate beforehand!
-  #geom_line(data=linedat,aes(tau,truth), linewidth = 1.2)+
+  geom_line(data=linedat,aes(tau,truth), linewidth = 1.2)+
   ### This cahnges the legend title and labels
   scale_color_discrete(labels= c("Allan","Spectral"),name="Method")+
   # ### all this makes the plot look more like a base R plot

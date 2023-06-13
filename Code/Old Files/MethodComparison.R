@@ -204,6 +204,18 @@ acf(diff(na.omit(dat180403$SrYb)))
 acf(diff(na.omit(dat180403$AlSr)))
 
 
+###### fit line to AVAR
+length(na.omit(clock_df))
+AVAR_clockdata <- getAvars(N = length(na.omit(clock_df)) , y = na.omit(clock_df), taus = c(2^(0:13), floor(length(na.omit(clock_df))/3)))
+plot(log(AVAR_clockdata$avarRes$taus), log(AVAR_clockdata$avarRes$overavars))
 
+AVAR_clockdata$avarRes$overavars
 
+ln.fit <- lm(log(AVAR_clockdata$avarRes$overavars[5:15]) ~ log(AVAR_clockdata$avarRes$taus[5:15]))
+
+line_pred <- function(ln.fit, tau){
+  as.numeric(ln.fit$coefficients[1]) + as.numeric(ln.fit$coefficients[2])*tau
+}
+
+line_pred(ln.fit, tau = log(length(na.omit(clock_df))))
 

@@ -74,7 +74,7 @@ print(setK)
 N <- 1024
 trfunc.vec <- bpvar.vec <- rep(NA, times = numberOfSimulations)
 
-tmat <- bmat <- matrix(NA, ncol = numberOfSimulations, nrow = 11)
+tmat <- bmat <- matrix(NA, ncol = numberOfSimulations, nrow = 10)
 
 f <- seq(0,0.5,length.out = N/2 + 1) #grid of frequencies
 delta.f <- f[2]
@@ -94,7 +94,7 @@ for(k in c(2^(0:8), floor(N/3))){
     print(paste("g = ", g))
     set.seed(i)
     #get ith simulation
-    X.t <- arfima.sim(N, model = list(dfrac = 0.499))
+    X.t <- arfima.sim(N, model = list(dfrac = 0.25))
     
     #calculate S.hat
     MTSE_full <- MT_spectralEstimate(X.t, V.mat)
@@ -113,21 +113,21 @@ for(k in c(2^(0:8), floor(N/3))){
   bmat[g,] <- bpvar.vec
 }
 
-
 ##AVAR calculation
 ### only need to run once #####
 # 
-# amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = 11)
-# 
-# for(i in 1:numberOfSimulations){
-#   #get X.t from simulation matrix
-#   print(i)
-#   X.t <- X.t_sims_flk[i,]
-# 
-#   avar.calc <- getAvars(N,X.t, taus = c(2^(0:9), floor(N/3)))
-#   amat[i,] <- avar.calc$avarRes$avars
-#   oamat[i,] <- avar.calc$avarRes$overavars
-# }
+amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = 10)
+
+for(i in 1:numberOfSimulations){
+  #get X.t from simulation matrix
+  print(i)
+  set.seed(i)
+  X.t <- arfima.sim(N, model = list(dfrac = 0.25))
+
+  avar.calc <- getAvars(N,X.t, taus = c(2^(0:8), floor(N/3)))
+  amat[i,] <- avar.calc$avarRes$avars
+  oamat[i,] <- avar.calc$avarRes$overavars
+}
 
 # likely need to save tmat and bmat to work with outside of the titans
 saveRDS(tmat,paste("Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseNoGaps.Rds",sep=""))
