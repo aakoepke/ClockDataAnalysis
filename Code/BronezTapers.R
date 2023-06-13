@@ -1,0 +1,36 @@
+################ Bronez tapers ################
+
+get.weights_bronez <- function(t.n = 1:50, K = 1, f.c = 0, f.w){
+
+  dist.mat <- rdist(t.n)
+  #B = [-pi,pi] for omega or [-1/2,1/2] for f
+  #R.b <- 1/(pi*(dist.mat))*(sin(dist.mat*pi))
+  #R.b[row(R.b) == col(R.b)] <- 1
+  #B = identity
+  
+  j = complex(real = 0, imaginary = 1)
+  R.a <- exp(j*2*pi*f.c*dist.mat)*(sin(2*pi*f.w*(dist.mat))/(pi*dist.mat))
+  R.a[row(R.a) == col(R.a)] <- f.w*2
+  
+  #Solve the eigenvalue problem
+  evs <- eigs(R.a,k = K)
+  
+  return(list("weights" = evs$vectors*sqrt(2*f.w), "eigenvalues" = evs$values))
+  }
+
+dim(evs$vectors)
+length(evs$values)
+N <- 256
+N.fourier <- floor(N/2) + 1
+freq <- seq(0,0.5, length.out = N.fourier)
+
+tapers_matlist <- list()
+e.vals_list <- list()
+
+for(i in 1:length(freq)){
+  print(i)
+  temp <- get.weights_bronez(t.n = 1:256, K = 3, f.c = freq[i], f.w = 4/256)
+  #tapers_matlist[[i]] <- temp$weights
+  #e.vals_list[[i]] <- temp$eigenvalues
+}
+
