@@ -8,14 +8,14 @@ library(fields)
 get_k_eigs=function(Ra,thek,f.w){
   evs=eigs(Ra,k = thek)
   
-  return(list("weights" = evs$vectors*sqrt(2*f.w), "eigenvalues" = evs$values))
+  return(list("weights" = evs$vectors*sqrt(2*f.w/thek), "eigenvalues" = evs$values))
 }
 
 get_k_geigen=function(Ra,Rb,thek,f.w){
   evs=geigen(Ra,Rb, symmetric = TRUE)
   
   N=dim(evs$vectors)[1]
-  return(list("weights" = evs$vectors[,(N-thek + 1):N]*sqrt(2*f.w), "eigenvalues" = sort(evs$values, decreasing = TRUE)[1:thek]))
+  return(list("weights" = evs$vectors[,(N-thek + 1):N]*sqrt(2*f.w/thek), "eigenvalues" = sort(evs$values, decreasing = TRUE)[1:thek]))
 }
 
 get.weights_bronez <- function(input.list){
