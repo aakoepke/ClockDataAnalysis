@@ -66,30 +66,83 @@ true.quantiles <- qchisq(probs, df = 4)
 plot(data.quantiles,true.quantiles/4) #*(max(data.quantiles)/max(true.quantiles)))
 abline(a = 0, b = 1)
 
-####################################
-X.t <- rnorm(256)
 
-test <- multitaper_est(X.t, W = 4/256, K = 5)
-test$e.values
+#####################
+##what if we took the sign maintenance out of the estimate?
+
+get_tapers <- function(t.n, W, K){
+#t.n <- 1:100
+  dist.mat <- rdist(na.omit(t.n))
+#W = 0.025 
+  #create the A' matrix (Chave 2019 equation (22))
+  A.prime <- (1/(pi*dist.mat))*sin(2*pi*W*dist.mat)
+  A.prime[row(A.prime) == col(A.prime)] <- W*2
+  print("A matrix computed")
+  
+  eigdec <- eigs(A.prime, k = K, which = "LM")
+  #eigdec <- eigen(A.prime)
+  eig_vecs <- eigdec$vectors[,1:K] #get only the vectors
+  print("tapers computed")
+  
+  # if(K ==1){
+  #   if (mean(Re(eig_vecs))<0){
+  #     eig_vecs <- -eig_vecs
+  #   }
+  # }
+  # 
+  # if(K == 2  || K == 3){
+  #   
+  #   if (mean(Re(eig_vecs[,1]))<0){
+  #     eig_vecs[,1] <- -eig_vecs[,1]
+  #   }
+  #   if (Re(eig_vecs[2,2] - eig_vecs[1,2])<0){
+  #     eig_vecs[,2] <- -eig_vecs[,2]
+  #   }
+  #   
+  #   if(K == 3){
+  #     if (mean(Re(eig_vecs[,3]))<0){
+  #       eig_vecs[,3] <- -eig_vecs[,3]
+  #     }
+  #   }
+  # }
+  # if(K >=4){
+  #   #some sign maintenance
+  #   for(i in seq(1,K,by = 2)){
+  #     if (mean(Re(eig_vecs[,i]))<0){
+  #       eig_vecs[,i] <- -eig_vecs[,i]
+  #     }
+  #   }
+  #   
+  #   for(i in seq(2,K-1,by = 2)){
+  #     if (Re(eig_vecs[2,i] - eig_vecs[1,i])<0){
+  #       eig_vecs[,i] <- -eig_vecs[,i]
+  #     }
+  #   }
+  # }
+  # 
+  # print("sign maintenance done")
+  
+  #"tapers" = eig_vecs, "e.values" = eigdec$values,
+  
+  return(eig_vecs)
+} 
 
 
-plot(clock_df - mean(clock_df, na.rm = TRUE))
-var(clock_df, na.rm = TRUE)
+X.t <- rnorm(1524)
+X.t[c(300:799)] <- NA
+t.n <- 1:1524
+t.n[c(300:799)] <- NA
+V.eigs <- get_tapers(t.n, W = 0.00390625, K = 5)
+V.eigen <- get_tapers(t.n, W = 0.00390625, K = 5)
+plot(V.eigen[,3])
 
-plot(na.omit(clock_df))
+test_eigs <- MT_spectralEstimate(X.t, V.mat = V.eigs)
+test_eigen <- MT_spectralEstimate(X.t, V.mat = V.eigen)
+plot(test_eigs$spectrum)
+lines(test_eigen$spectrum)
+sum(abs(test_eigs$spectrum - test_eigen$spectrum))
 
-acf(clock_df, na.action = na.pass)
-
-diffedx2_clockdata <- diff(diff(clock_df))
-
-
-
-
-
-
-
-
-
+t(V.eigs[,3])%*%V.eigen[,3]
 
 
 

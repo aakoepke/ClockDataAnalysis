@@ -61,12 +61,15 @@ X.t <- rnorm(N) #data
 dist.mat <- rdist(t.vec) #distance matrix (delta_nm)
 
 ##get multitaper spectral estimate:
-MTSE_test_tapers <- get_tapers(X.t, W = 4/N, K = 5) #calculate tapers
+W = 4/N
+K = 5
+MTSE_test_tapers <- get_tapers(X.t, W = W, K = K) #calculate tapers
 MTSE_test_spec <- MT_spectralEstimate(X.t = X.t, V.mat = MTSE_test_tapers)
 
-
+t(V[,1])%*%V[,1]
 ##Get V, V* matrix
-V <- MTSE_test_tapers
+V <- MTSE_test_tapers*(sqrt(2*W/K))
+
 sum(abs(t(V[,1]*exp(im*2*pi*freq[10]*1:N))%*%(V[,1]*exp(-im*2*pi*freq[129]*1:N)))^2)
 
 N <- dim(V)[1]
@@ -81,7 +84,7 @@ V.exp.i <- V*exp(-im*2*pi*freq[i]*1:N)
   j = 1
   while(j <= i){
     V.exp.j <- V*exp(-im*2*pi*freq[j]*1:N)
-    Cov.mat[i,j] <- norm(Conj(t(V.exp.i))%*%V.exp.j, type = "F") #norm(V_star%*%exp(im*2*pi*freq[i]*dist.mat)%*%exp(-im*2*pi*freq[j]*dist.mat)%*%V, type = "2")*(A.size/numTapers)^2
+    Cov.mat[i,j] <- norm(Conj(t(V.exp.i))%*%V.exp.j, type = "2") #norm(V_star%*%exp(im*2*pi*freq[i]*dist.mat)%*%exp(-im*2*pi*freq[j]*dist.mat)%*%V, type = "2")*(A.size/numTapers)^2
     j = j+1
   }
 }
@@ -92,7 +95,7 @@ size.cov <- norm(Cov.mat)
 Cov.mat[1:10,1:10]
 #Calculate G_tau vector
 
-G_tau <- transfer.func(freq,tau = 4) #change the tau value to get different vectors
+G_tau <- transfer.func(freq,tau = 1) #change the tau value to get different vectors
 G_tau[1] <- 1
 #calculate variance for the AVAR estimate at the given tau
 t(G_tau)%*%(Cov.mat)%*%G_tau*(freq[2])^2
@@ -110,7 +113,7 @@ G_tau <- transfer.func(f,tau = taus[i]) #change the tau value to get different v
 G_tau[1] <- 1
 
 t(G_tau)%*%G_tau*(f[2])^2
-var(tmat[,2])
+var(tmat[,1])
 
 i = j = 1
 exp(im*2*pi*freq[i]*dist.mat)%*%exp(-im*2*pi*freq[j]*dist.mat)
