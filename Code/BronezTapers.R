@@ -1,3 +1,8 @@
+library(RSpectra) #eigensolving
+library(geigen)
+library(tidyverse)
+library(fields)
+
 ################ Bronez tapers ################
 
 get_k_eigs=function(Ra,thek,f.w){
@@ -13,10 +18,14 @@ get_k_geigen=function(Ra,Rb,thek,f.w){
   return(list("weights" = evs$vectors[,(N-thek + 1):N]*sqrt(2*f.w), "eigenvalues" = sort(evs$values, decreasing = TRUE)[1:thek]))
 }
 
-get.weights_bronez <- function(t.n = 1:50, K = 1, f.c = 0, f.w){
-  
+get.weights_bronez <- function(input.list){
+  t.n=input.list$t.n 
+  K=input.list$K
+  f.c=input.list$f.c
+  f.w=input.list$f.w 
+
   dist.mat <- #rdist(t.n)
-    outer(t.n,t.n,"-")
+    outer(t.n,t.n,"-") #this option doesn't create a symmetric matrix
   
   # B = [-pi,pi] for omega or [-1/2,1/2] for f
   R.b <- 1/(pi*(dist.mat))*(sin(dist.mat*pi))
@@ -33,8 +42,8 @@ get.weights_bronez <- function(t.n = 1:50, K = 1, f.c = 0, f.w){
   return(out)
 }
 
-dim(evs$vectors)
-length(evs$values)
+# dim(evs$vectors)
+# length(evs$values)
 N <- 256
 N.fourier <- floor(N/2) + 1
 freq <- seq(0,0.5, length.out = N.fourier)
@@ -42,10 +51,29 @@ freq <- seq(0,0.5, length.out = N.fourier)
 tapers_matlist <- list()
 e.vals_list <- list()
 
-for(i in 1:length(freq)){
-  print(i)
-  temp <- get.weights_bronez(t.n = 1:256, K = 3, f.c = freq[i], f.w = 4/256)
-  #tapers_matlist[[i]] <- temp$weights
-  #e.vals_list[[i]] <- temp$eigenvalues
-}
+# for(i in 1:length(freq)){
+#   print(i)
+#   temp <- get.weights_bronez(t.n = 1:256, K = 3, f.c = freq[i], f.w = 4/256)
+#   #tapers_matlist[[i]] <- temp$weights
+#   #e.vals_list[[i]] <- temp$eigenvalues
+# }
 
+
+
+library(parallel)
+
+input.list=list()
+for(i in 1:length(freq)){
+  input.list[[i]]=list("t.n"=1:N,
+                       "K"=3,
+                       "f.c"=freq[i],
+                       "f.w"=4/256)
+}
+## function.to.use takes a one-row dataframe as input,
+## and returns a dataframe
+
+startTime = Sys.time()
+parResult = mclapply(input.list, get.weights_bronez, mc.cores = 50)
+Sys.time()-startTime
+
+#This creates a list where each element corresponds to a frequency
