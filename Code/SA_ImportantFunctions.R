@@ -36,43 +36,43 @@ multitaper_est <- function(X.t, W, K){
   eig_vecs <- eigdec$vectors #get only the vectors
   print("tapers computed")
   
-  if(K ==1){
-    if (mean(Re(eig_vecs))<0){
-      eig_vecs <- -eig_vecs
-    }
-  }
-  
-  if(K == 2  || K == 3){
-    
-    if (mean(Re(eig_vecs[,1]))<0){
-      eig_vecs[,1] <- -eig_vecs[,1]
-    }
-    if (Re(eig_vecs[2,2] - eig_vecs[1,2])<0){
-      eig_vecs[,2] <- -eig_vecs[,2]
-    }
-    
-    if(K == 3){
-      if (mean(Re(eig_vecs[,3]))<0){
-        eig_vecs[,3] <- -eig_vecs[,3]
-      }
-    }
-  }
-  if(K >=4){
-    #some sign maintenance
-    for(i in seq(1,K,by = 2)){
-      if (mean(Re(eig_vecs[,i]))<0){
-        eig_vecs[,i] <- -eig_vecs[,i]
-      }
-    }
-    
-    for(i in seq(2,K-1,by = 2)){
-      if (Re(eig_vecs[2,i] - eig_vecs[1,i])<0){
-        eig_vecs[,i] <- -eig_vecs[,i]
-      }
-    }
-  }
-  
-  print("sign maintenance done")
+  # if(K ==1){
+  #   if (mean(Re(eig_vecs))<0){
+  #     eig_vecs <- -eig_vecs
+  #   }
+  # }
+  # 
+  # if(K == 2  || K == 3){
+  #   
+  #   if (mean(Re(eig_vecs[,1]))<0){
+  #     eig_vecs[,1] <- -eig_vecs[,1]
+  #   }
+  #   if (Re(eig_vecs[2,2] - eig_vecs[1,2])<0){
+  #     eig_vecs[,2] <- -eig_vecs[,2]
+  #   }
+  #   
+  #   if(K == 3){
+  #     if (mean(Re(eig_vecs[,3]))<0){
+  #       eig_vecs[,3] <- -eig_vecs[,3]
+  #     }
+  #   }
+  # }
+  # if(K >=4){
+  #   #some sign maintenance
+  #   for(i in seq(1,K,by = 2)){
+  #     if (mean(Re(eig_vecs[,i]))<0){
+  #       eig_vecs[,i] <- -eig_vecs[,i]
+  #     }
+  #   }
+  #   
+  #   for(i in seq(2,K-1,by = 2)){
+  #     if (Re(eig_vecs[2,i] - eig_vecs[1,i])<0){
+  #       eig_vecs[,i] <- -eig_vecs[,i]
+  #     }
+  #   }
+  # }
+  # 
+  # print("sign maintenance done")
   
   ##use tapers to generate spectral estimate
   N <- length(na.omit(t.n))

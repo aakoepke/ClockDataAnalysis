@@ -8,24 +8,25 @@ library(fields)
 get_k_eigs=function(Ra,thek,f.w){
   evs=eigs(Ra,k = thek)
   
-  return(list("weights" = evs$vectors*sqrt(2*f.w/thek), "eigenvalues" = evs$values))
+  return(list("weights" = evs$vectors, "eigenvalues" = evs$values))
 }
 
 get_k_geigen=function(Ra,Rb,thek,f.w){
   evs=geigen(Ra,Rb, symmetric = TRUE)
   
   N=dim(evs$vectors)[1]
-  return(list("weights" = evs$vectors[,(N-thek + 1):N]*sqrt(2*f.w/thek), "eigenvalues" = sort(evs$values, decreasing = TRUE)[1:thek]))
+  return(list("weights" = evs$vectors[,(N-thek + 1):N], "eigenvalues" = sort(evs$values, decreasing = TRUE)[1:thek]))
 }
+
 
 get.weights_bronez <- function(input.list){
   t.n=input.list$t.n 
   K=input.list$K
   f.c=input.list$f.c
   f.w=input.list$f.w 
-
-  dist.mat <- #rdist(t.n)
-    outer(t.n,t.n,"-") #this option doesn't create a symmetric matrix
+  dist.mat = input.list$tn_m
+  #dist.mat <- rdist(t.n)
+    #outer(t.n,t.n,"-") #this option doesn't create a symmetric matrix
   
   # B = [-pi,pi] for omega or [-1/2,1/2] for f
   R.b <- 1/(pi*(dist.mat))*(sin(dist.mat*pi))
@@ -44,7 +45,7 @@ get.weights_bronez <- function(input.list){
 
 # dim(evs$vectors)
 # length(evs$values)
-N <- 256
+N <- 2048
 N.fourier <- floor(N/2) + 1
 freq <- seq(0,0.5, length.out = N.fourier)
 
@@ -67,13 +68,14 @@ for(i in 1:length(freq)){
   input.list[[i]]=list("t.n"=1:N,
                        "K"=3,
                        "f.c"=freq[i],
-                       "f.w"=4/256)
+                       "f.w"=4/N,
+                       "tn_m"=rdist(1:N))
 }
 ## function.to.use takes a one-row dataframe as input,
 ## and returns a dataframe
 
 startTime = Sys.time()
-parResult = mclapply(input.list, get.weights_bronez, mc.cores = 50)
+parResult = mclapply(input.list, get.weights_bronez, mc.cores = 25)
 Sys.time()-startTime
 
 #This creates a list where each element corresponds to a frequency
