@@ -45,7 +45,7 @@ get.weights_bronez <- function(input.list){
 
 # dim(evs$vectors)
 # length(evs$values)
-N <- 2048
+N <- 512
 N.fourier <- floor(N/2) + 1
 freq <- seq(0,0.5, length.out = N.fourier)
 
@@ -108,5 +108,5 @@ multitaper_est_bronez <- function(X.t, eig_vecs, K){
 }
 
 
-dat=rnorm(N)
-multitaper_est_bronez(dat,parResult[[1]]$weights,3)
+#dat=rnorm(N)
+#multitaper_est_bronez(dat,parResult[[1]]$weights,3)
