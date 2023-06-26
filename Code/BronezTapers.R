@@ -25,6 +25,8 @@ get.weights_bronez <- function(input.list){
   f.c=input.list$f.c
   f.w=input.list$f.w 
   dist.mat = input.list$tn_m
+  index = input.list$index
+  print(index)
   #dist.mat <- rdist(t.n)
     #outer(t.n,t.n,"-") #this option doesn't create a symmetric matrix
   
@@ -69,14 +71,15 @@ for(i in 1:length(freq)){
                        "K"=3,
                        "f.c"=freq[i],
                        "f.w"=4/N,
-                       "tn_m"=rdist(1:N))
+                       "tn_m"=rdist(1:N),
+                       "index" = i)
 }
 ## function.to.use takes a one-row dataframe as input,
 ## and returns a dataframe
 
 startTime = Sys.time()
 parResult = mclapply(input.list, get.weights_bronez, mc.cores = 25)
-Sys.time()-startTime
+print(Sys.time()-startTime)
 
 #This creates a list where each element corresponds to a frequency
 
