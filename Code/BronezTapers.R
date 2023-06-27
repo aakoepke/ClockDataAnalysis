@@ -31,16 +31,18 @@ get.weights_bronez <- function(input.list){
     #outer(t.n,t.n,"-") #this option doesn't create a symmetric matrix
   
   # B = [-pi,pi] for omega or [-1/2,1/2] for f
-  R.b <- 1/(pi*(dist.mat))*(sin(dist.mat*pi))
-  R.b[row(R.b) == col(R.b)] <- 1
+  # R.b <- 1/(pi*(dist.mat))*(sin(dist.mat*pi))
+  # R.b[row(R.b) == col(R.b)] <- 1
   # B = identity
+  R.b <- diag(1,nrow = length(t.n),ncol = length(t.n))
   
   j = complex(real = 0, imaginary = 1)
   R.a <- exp(j*2*pi*f.c*dist.mat)*(sin(2*pi*f.w*(dist.mat))/(pi*dist.mat))
   R.a[row(R.a) == col(R.a)] <- f.w*2
   
   #Solve the eigenvalue problem
-  out <- tryCatch(get_k_eigs(R.a,K,f.w),error=function(err){get_k_geigen(R.a,R.b,K,f.w)})
+  # out <- tryCatch(get_k_eigs(R.a,K,f.w),error=function(err){get_k_geigen(R.a,R.b,K,f.w)})
+  out <- get_k_geigen(R.a,R.b,K,f.w)
   
   return(out)
 }
@@ -78,7 +80,7 @@ for(i in 1:length(freq)){
 ## and returns a dataframe
 
 startTime = Sys.time()
-parResult = mclapply(input.list, get.weights_bronez, mc.cores = 25)
+parResult = mclapply(input.list, get.weights_bronez, mc.cores = 3)
 print(Sys.time()-startTime)
 
 #This creates a list where each element corresponds to a frequency
