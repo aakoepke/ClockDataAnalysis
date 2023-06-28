@@ -46,12 +46,16 @@ for(i in 1:N.fourier){
   print(i)
   j = 1
   while(j <= i){
-    Cov.mat_chave[i,j] <- norm(Conj(t(test_chave$tapers*exp(-im*2*pi*freq[i])))%*%(test_chave$tapers*exp(-im*2*pi*freq[j])), type = "2") #norm(V_star%*%exp(im*2*pi*freq[i]*dist.mat)%*%exp(-im*2*pi*freq[j]*dist.mat)%*%V, type = "2")*(A.size/numTapers)^2
+    Cov.mat_chave[i,j] <- norm(Conj(t(test_chave$tapers*exp(-im*2*pi*freq[i]*1:N)))%*%(test_chave$tapers*exp(-im*2*pi*freq[j]*1:N)), type = "2") #norm(V_star%*%exp(im*2*pi*freq[i]*dist.mat)%*%exp(-im*2*pi*freq[j]*dist.mat)%*%V, type = "2")*(A.size/numTapers)^2
     j = j+1
   }
 }
 
-Cov.mat_chave[upper.tri(Cov.mat_bronez)] <- t(Cov.mat_bronez)[upper.tri(Cov.mat_bronez)]
+Cov.mat_chave[upper.tri(Cov.mat_chave)] <- t(Cov.mat_chave)[upper.tri(Cov.mat_chave)]
+
+Cov.mat_bronez[1:5,1:5]
+Cov.mat_chave[1:5,1:5]
+norm(Cov.mat_bronez - Cov.mat_chave, type = "2")
 
 for(i in 1:length(taus)){
 G_tau <- transfer.func(freq,tau = taus[i]) #change the tau value to get different vectors
