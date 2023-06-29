@@ -84,34 +84,3 @@ parResult = mclapply(input.list, get.weights_bronez, mc.cores = 3)
 print(Sys.time()-startTime)
 
 #This creates a list where each element corresponds to a frequency
-
-## MTSE for gappy data function 
-multitaper_est_bronez <- function(X.t, eig_vecs, K){
-  X.t <- X.t - mean(X.t, na.rm = TRUE) #demean
-  N.long <- length(X.t)
-  t.n <- 1:N.long
-  missing.indices <- which(is.na(X.t))
-  t.n[which(is.na(X.t))] <- NA
-
-  ##use tapers to generate spectral estimate
-  N <- length(na.omit(t.n))
-  S.x.hat_MD <- rep(NA, times = floor(N/2) + 1)
-  #freqs <- seq(0,0.5, length.out = floor(N/2) + 1)
-  
-  for(j in 0:floor(N/2)){
-    k.vec <- rep(NA,times = K)
-    for(k in 0:(K-1)){
-      W.t <- eig_vecs[,k+1]*na.exclude(X.t)
-      inner.sum <- sum(W.t*exp(-complex(real = 0, imaginary = 1)*2*pi*na.omit(t.n)*j/N), na.rm = TRUE)
-      k.vec[k + 1] <- abs(inner.sum)^2
-    }
-    S.x.hat_MD[j+1] <- mean(k.vec)
-  }
-  
-  
-  return(list("spectrum" = S.x.hat_MD))
-}
-
-
-#dat=rnorm(N)
-#multitaper_est_bronez(dat,parResult[[1]]$weights,3)
