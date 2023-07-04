@@ -2,6 +2,7 @@ library(RSpectra) #eigensolving
 library(geigen)
 library(tidyverse)
 library(fields)
+library(parallel)
 
 ################ Bronez tapers ################
 
@@ -47,25 +48,10 @@ get.weights_bronez <- function(input.list){
   return(out)
 }
 
-# dim(evs$vectors)
-# length(evs$values)
 N <- 512
 N.fourier <- floor(N/2) + 1
 freq <- seq(0,0.5, length.out = N.fourier)
 
-tapers_matlist <- list()
-e.vals_list <- list()
-
-# for(i in 1:length(freq)){
-#   print(i)
-#   temp <- get.weights_bronez(t.n = 1:256, K = 3, f.c = freq[i], f.w = 4/256)
-#   #tapers_matlist[[i]] <- temp$weights
-#   #e.vals_list[[i]] <- temp$eigenvalues
-# }
-
-
-
-library(parallel)
 
 input.list=list()
 for(i in 1:length(freq)){
