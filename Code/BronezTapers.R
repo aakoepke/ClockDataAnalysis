@@ -6,11 +6,11 @@ library(parallel)
 
 ################ Bronez tapers ################
 
-get_k_eigs=function(Ra,thek,f.w){
-  evs=eigs(Ra,k = thek)
-  
-  return(list("weights" = evs$vectors, "eigenvalues" = evs$values))
-}
+# get_k_eigs=function(Ra,thek,f.w){
+#   evs=eigs(Ra,k = thek)
+#   
+#   return(list("weights" = evs$vectors, "eigenvalues" = evs$values))
+# }
 
 get_k_geigen=function(Ra,Rb,thek,f.w){
   evs=geigen(Ra,Rb, symmetric = TRUE)
@@ -48,7 +48,7 @@ get.weights_bronez <- function(input.list){
   return(out)
 }
 
-N <- 512
+N <- 256
 N.fourier <- floor(N/2) + 1
 freq <- seq(0,0.5, length.out = N.fourier)
 
@@ -70,3 +70,5 @@ parResult = mclapply(input.list, get.weights_bronez, mc.cores = 3)
 print(Sys.time()-startTime)
 
 #This creates a list where each element corresponds to a frequency
+
+# saveRDS(parResult,"/home/aak3/NIST/ClockDataAnalysis/Code/BronezResults256_070423.Rds")
