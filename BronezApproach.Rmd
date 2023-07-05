@@ -1,0 +1,309 @@
+---
+title: "Bronez Approach"
+author: "Amanda Koepke"
+date: "2023-06-28"
+output: 
+  pdf_document: 
+    fig_crop: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(RSpectra) #eigensolving
+library(geigen)
+library(tidyverse)
+library(fields)
+```
+
+The data consists of observations $x_i$ and time points $t_i$ for $i \in 1, \ldots,N$. The time points are not necessarily evenly spaced, but we will treat them as evenly spaced in the example below. 
+
+We define $K$, the number of tapers we want to use, and $\omega$ (f.w in code), the bandwidth. In general a good choice of bandwidth is $4/N$. 
+
+To calculate the tapers, we don't need the $x_i$, just the symmetric distance matrix $\boldsymbol{\Delta}$, where $\Delta_{n,m}=|t_n-t_m|$. 
+
+<!-- ```{r} -->
+<!-- N <- 2^8 -->
+<!-- N.fourier <- floor(N/2) + 1 -->
+<!-- freq <- seq(0,0.5, length.out = N.fourier) -->
+
+<!-- input.list=list("t.n"=1:N, -->
+<!--                        "K"=3, -->
+<!--                        "f.c"=freq[10], -->
+<!--                        "f.w"=4/N, -->
+<!--                        "tn_m"=rdist(1:N)) -->
+<!-- t.n=input.list$t.n  -->
+<!-- K=input.list$K -->
+<!-- f.c=input.list$f.c -->
+<!-- f.w=input.list$f.w  -->
+<!-- dist.mat = input.list$tn_m -->
+<!-- ``` -->
+
+Under the Bronez approach, we create matrices $\mathbf{A}$ and $\mathbf{B}$. 
+
+The matrix $\mathbf{A}$ is defined as 
+
+\begin{eqnarray*}
+A_{nm} = \int_{f-\omega}^{f+\omega}e^{i 2 \pi f (t_n-t_m) } df &=& \int_{f-\omega}^{f+\omega}e^{i 2 \pi f \Delta_{n,m} } df \\
+&=&  \frac{i (e^{i 2 \pi \Delta_{n,m} (f-\omega)}-e^{i 2 \pi \Delta_{n,m} (f+\omega)})}{2 \pi \Delta_{n,m}} \\
+&=&  \frac{e^{i 2 \pi \Delta_{n,m} f}}{\pi \Delta_{n,m}} \frac{e^{i 2 \pi \Delta_{n,m} \omega}-e^{-i 2 \pi \Delta_{n,m} \omega}}{2i} \\
+&=&  \frac{e^{i 2 \pi \Delta_{n,m} f}}{\pi \Delta_{n,m}} sin(2 \pi \Delta_{n,m} \omega)
+\end{eqnarray*}
+
+When $n=m$, $A_{nm} = \int_{f-\omega}^{f+\omega}e^{0} df = 2\omega$.
+
+This matrix depends on the center frequency, $f$. 
+
+The $\mathbf{B}$ matrix is defined as 
+\[
+B_{nm}=\int_{-\beta}^{\beta}e^{i 2 \pi f (t_n-t_m) } df
+\]
+
+When $t_n=t_m$, $B_{nn}=\int_{-\beta}^{\beta}e^{0} df = 2\beta$. When $\beta=1/2$, as we assume, $B_{nn}=1$.
+
+When $t_n \neq t_m$, $B_{nm}=\frac {\mbox{sin} \left(2 \beta \pi (t_n-t_m) \right)}{\pi (t_n-t_m)} =\frac {\mbox{sin} \left(\pi (t_n-t_m) \right)}{\pi (t_n-t_m)}$ when $\beta=1/2$. When the times are all integer values, as they are in this application, $B_{nm}=0$, so $B$ simplifies further to the identity matrix. 
+
+<!--   # B = [-pi,pi] for omega or [-1/2,1/2] for f -->
+<!--   # R.b <- 1/(pi*(dist.mat))*(sin(dist.mat*pi)) -->
+<!--   # R.b[row(R.b) == col(R.b)] <- 1 -->
+<!--   # B = identity -->
+
+<!-- ```{r} -->
+<!-- R.b <- diag(1,nrow = length(t.n),ncol = length(t.n)) -->
+
+<!-- j = complex(real = 0, imaginary = 1) -->
+<!-- R.a <- exp(j*2*pi*f.c*dist.mat)*(sin(2*pi*f.w*(dist.mat))/(pi*dist.mat)) -->
+<!-- R.a[row(R.a) == col(R.a)] <- f.w*2 -->
+
+<!-- ``` -->
+
+
+Then to determine the tapers for a given frequency, we solve the eigenvalue problem
+\[
+\mathbf{A} \underline w_k = \lambda_k \mathbf{B} \underline w_k
+\]
+
+where $\underline w_k$ is the $k^{th}$ eigenvector. When choosing the number of tapers $K$, ensure the eigenvalues are close to 1. 
+
+Under the Bronez approach, $\mathbf{A}$ varies by center frequency ($f$, f.c in the code) and this eigenvalue problem must be solved for each frequency. Typically we solve this for $\lfloor N/2 \rfloor+1$ frequencies. This can be computationally expensive, and because of this Bronez's method did not seem to catch on. In our code, we parallelize the computation to speed it up, though this approach is still quite computationally expensive for the size of datasets we expect to see. 
+
+
+```{r,eval=FALSE}
+
+################################################################################################
+## tapers used later are calculated by frequency in BronezTapers.R, code here for completeness 
+################################################################################################
+
+### calculate eigenvalues and eigenvectors, return the K largest in magnitude (constrained to 
+### be greater than zero, so will be last K)
+get_k_geigen=function(Ra,Rb,thek,f.w){
+  evs=geigen(Ra,Rb, symmetric = TRUE)
+
+  N=dim(evs$vectors)[1]
+  return(list("weights" = evs$vectors[,(N-thek + 1):N], 
+              "eigenvalues" = sort(evs$values, decreasing = TRUE)[1:thek]))
+}
+
+### calculate tapers using Bronez approach
+get.weights_bronez <- function(input.list){
+  t.n=input.list$t.n
+  K=input.list$K
+  f.c=input.list$f.c
+  f.w=input.list$f.w
+  dist.mat = input.list$tn_m
+  index = input.list$index
+  print(index)
+
+  R.b <- diag(1,nrow = length(t.n),ncol = length(t.n))
+
+  j = complex(real = 0, imaginary = 1)
+  R.a <- exp(j*2*pi*f.c*dist.mat)*(sin(2*pi*f.w*(dist.mat))/(pi*dist.mat))
+  R.a[row(R.a) == col(R.a)] <- f.w*2
+
+  #Solve the eigenvalue problem
+  out <- get_k_geigen(R.a,R.b,K,f.w)
+
+  return(out)
+}
+
+### create equally spaced time intervals from 1 to N
+N <- 256
+N.fourier <- floor(N/2) + 1
+freq <- seq(0,0.5, length.out = N.fourier)
+
+input.list=list()
+for(i in 1:length(freq)){
+  input.list[[i]]=list("t.n"=1:N,
+                       "K"=3,
+                       "f.c"=freq[i],
+                       "f.w"=4/N,
+                       "tn_m"=rdist(1:N),
+                       "index" = i)
+}
+
+##################################################################################################
+# The below parallelizes the code and creates a list where each element corresponds to a frequency
+##################################################################################################
+startTime = Sys.time()
+parResult = mclapply(input.list, get.weights_bronez, mc.cores = 3)
+print(Sys.time()-startTime)
+
+saveRDS(parResult,"/home/aak3/NIST/ClockDataAnalysis/Code/BronezResults256_070423.Rds")
+
+```
+
+### Read in the tapers generated by the above code
+
+```{r,fig.width=5,fig.height=3}
+
+#read in what was written above
+tapers256=readRDS("/home/aak3/NIST/ClockDataAnalysis/Code/BronezResults256_070423.Rds")
+
+### check eigenvalues
+plot(tapers256[[1]]$eigenvalues)
+
+for(i in 1:length(tapers256)){
+  points(tapers256[[i]]$eigenvalues)
+}
+
+##eigenvalues are close to 1
+
+taper.mat <- tapers256
+N = length(taper.mat[[1]]$weights[,1])
+N.fourier = floor(N/2) + 1
+freq = seq(0,0.5, length.out = N.fourier)
+set.seed(1990)
+x.t <- rnorm(N,0,1)
+
+## look at a tapers
+centerFreqNum=1
+
+plotTapers=data.frame(freq=centerFreqNum,k=1,n=1:N, weight=Re(tapers256[[centerFreqNum]]$weights[,1]))
+plotTapers=bind_rows(plotTapers,data.frame(freq=centerFreqNum,k=2,n=1:N,weight=Re(tapers256[[centerFreqNum]]$weights[,2])))
+plotTapers=bind_rows(plotTapers,data.frame(freq=centerFreqNum,k=3,n=1:N,weight=Re(tapers256[[centerFreqNum]]$weights[,3])))
+plotTapers$k =as.factor(plotTapers$k)
+
+ggplot(plotTapers,aes(n,weight,col=k))+
+  geom_line()
+
+
+centerFreqNum=15
+
+plotTapers=data.frame(freq=centerFreqNum,k=1,n=1:N, weight=Re(tapers256[[centerFreqNum]]$weights[,1]))
+plotTapers=bind_rows(plotTapers,data.frame(freq=centerFreqNum,k=2,n=1:N,weight=Re(tapers256[[centerFreqNum]]$weights[,2])))
+plotTapers=bind_rows(plotTapers,data.frame(freq=centerFreqNum,k=3,n=1:N,weight=Re(tapers256[[centerFreqNum]]$weights[,3])))
+plotTapers$k =as.factor(plotTapers$k)
+
+ggplot(plotTapers,aes(n,weight,col=k))+
+  geom_line()
+
+```
+
+
+### Calculate spectral estimate
+
+With the tapers, we can estimate the spectrum using
+\[
+\frac{1}{K}\sum_{k=1}^{K} \left|\underline w_k^* \underline x \right|^2 =\frac{1}{K}\sum_{k=1}^{K} \left| \sum_{i=1}^N w_{k,i} x_i \right|^2
+\]
+
+```{r}
+spec.hat <- rep(NA, times = N.fourier)
+
+for(i in 1:length(freq)){
+  # print(i)
+  spec.hat[i] <- (1/3)*sum(abs(Conj(t(taper.mat[[i]]$weights))%*%x.t)^2)
+}
+
+# /sqrt(0.01041667)
+
+```
+<!-- Cait had been dividing taper.mat[[i]]$weights by /(2*(4/N)/3)), but that doesn't seem to be necessary here? -->
+
+Bronez page 45 says you should normalize the eigenvectors so that 
+
+\[
+\underline w_k^* \mathbf{B} \underline w_k = \underline w_k^* \underline w_k = 2 \omega/(2 \pi K)
+\]
+
+For this example, $(4/N)/(\pi 3)$
+
+differs from Cait's, why? likely off by a $2 \pi$ with that weird factor i can't track
+
+```{r}
+plot(freq, spec.hat) #/(2*(4/N)/3))
+abline(h=1) #variance of data
+
+w.k <- tapers256[[1]]$weights[,1]
+# w.k <- w.k*sqrt(0.001)
+t(w.k)%*%w.k
+
+# weights_scaled = list()
+#
+# for(i in 1:N.fourier){
+#   weights_scaled[[i]] <- tapers256[[i]]$weights/sqrt(0.01041667)
+# }
+
+```
+
+
+
+## Variance
+
+Bronez showed that $Var(\hat{P}(A))=||w^*(A)R_xw(A)||^2$.
+
+Mike has generalized this to show $Cov(\hat{P}(A_1),\hat{P}(A_2))=||w^*(A_1) R_x w(A_2)||^2$, where $R_x$ is the autocovariance matrix. 
+
+
+For white noise, $R_x=I$, so for each frequency we'd calculate $||w^*(A_1) w(A_2)||^2$
+
+
+```{r}
+Cov.mat_bronez <- matrix(NA, nrow = N.fourier, ncol = N.fourier)
+
+for(i in 1:N.fourier){
+  # print(i)
+  j = 1
+  while(j <= i){
+    Cov.mat_bronez[i,j] <- norm(Conj(t(tapers256[[i]]$weights))%*%(tapers256[[j]]$weights), type = "2") #norm(V_star%*%exp(im*2*pi*freq[i]*dist.mat)%*%exp(-im*2*pi*freq[j]*dist.mat)%*%V, type = "2")*(A.size/numTapers)^2
+    j = j+1
+  }
+}
+
+Cov.mat_bronez[upper.tri(Cov.mat_bronez)] <- t(Cov.mat_bronez)[upper.tri(Cov.mat_bronez)]
+
+
+Cov.mat_bronez[1:6,1:6]
+
+```
+
+
+
+```{r,message=FALSE}
+##compare to Chave estimate
+source("/home/aak3/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
+test_chave <- multitaper_est(X.t = x.t, W = 4/N, K = 3)
+
+plot(freq, test_chave$spectrum, col = "blue")
+points(freq, spec.hat) #/(2*(4/N)/3))
+# abline(h=36) variance of data
+plot(freq, abs(test_chave$spectrum - spec.hat))
+
+
+Cov.mat_chave <- matrix(NA, nrow = N.fourier, ncol = N.fourier)
+
+for(i in 1:N.fourier){
+  # print(i)
+  j = 1
+  while(j <= i){
+    Cov.mat_chave[i,j] <- norm(Conj(t(test_chave$tapers*exp(-im*2*pi*freq[i]*1:N)))%*%(test_chave$tapers*exp(-im*2*pi*freq[j]*1:N)), type = "2") #norm(V_star%*%exp(im*2*pi*freq[i]*dist.mat)%*%exp(-im*2*pi*freq[j]*dist.mat)%*%V, type = "2")*(A.size/numTapers)^2
+    j = j+1
+  }
+}
+
+Cov.mat_chave[upper.tri(Cov.mat_chave)] <- t(Cov.mat_chave)[upper.tri(Cov.mat_chave)]
+
+Cov.mat_bronez[1:5,1:5]
+Cov.mat_chave[1:5,1:5]
+norm(Cov.mat_bronez - Cov.mat_chave, type = "2")
+
+```
