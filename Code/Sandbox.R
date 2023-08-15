@@ -146,6 +146,10 @@ t(V.eigs[,3])%*%V.eigen[,3]
 
 
 
+###
+
+parResult = readRDS("Code/BronezResults.Rds")
+
 
 
 
