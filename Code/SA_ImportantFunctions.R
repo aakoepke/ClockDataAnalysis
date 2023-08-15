@@ -152,7 +152,7 @@ get_tapers <- function(t.n, W, K){
   
   #"tapers" = eig_vecs, "e.values" = eigdec$values,
   
-  return(eig_vecs)
+  return(list("tapers" = eig_vecs, "e.values" = eigdec$values))
 } 
 
 #input: X.t = time series of length N with any missing values and length L without, 
