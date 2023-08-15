@@ -13,7 +13,8 @@
 ##############################################
 ##############################################
 
-numberOfSimulations = 300
+numberOfSimulations = 500
+N = 2048
 
 ## keeping track of how long this all takes
 startTime=Sys.time()
@@ -49,8 +50,8 @@ runDate=format(Sys.Date(),"%m%d%y")
 
 ###run6
 setWnum = 4
-setW = setWnum/2048
-setK = 6
+setW = setWnum/N
+setK = 3
 
 print(setWnum)
 print(setK)
@@ -59,10 +60,9 @@ print(setK)
 ######   WN(0,1), no gaps    #########
 ######################################
 # N <- 7200
-N = 1024 
 trfunc.vec <- bpvar.vec <- rep(NA, times = numberOfSimulations)
-
-tmat <- bmat <- matrix(NA, ncol = numberOfSimulations, nrow = 11)
+taus <- c(2^(0:9), floor(N/3))
+tmat <- bmat <- matrix(NA, ncol = numberOfSimulations, nrow = length(taus))
 
 f <- seq(0,0.5,length.out = N/2 + 1) #grid of frequencies
 delta.f <- f[2]
@@ -73,7 +73,7 @@ V.mat <- get_tapers(t.n, W = setW, K = setK)
 
 
 r = 0
-for(k in c(2^(0:9), floor(N/3))){
+for(k in taus){
   r = r + 1
   tau = k
   print(paste("r = ", r))
@@ -104,7 +104,7 @@ for(k in c(2^(0:9), floor(N/3))){
 
 ###also Calculate AVAR###
 
-amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = 11)
+amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = length(taus))
 
 for(i in 1:numberOfSimulations){
   set.seed(i)
@@ -112,7 +112,7 @@ for(i in 1:numberOfSimulations){
   #generate X.t
   X.t <- rnorm(N,mean = 0, sd = 1)
   
-  avar.calc <- getAvars(N,X.t, taus = c(2^(0:9), floor(N/3)))
+  avar.calc <- getAvars(N,X.t, taus = taus)
   amat[i,] <- avar.calc$avarRes$avars
   oamat[i,] <- avar.calc$avarRes$overavars
 }
