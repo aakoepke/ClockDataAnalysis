@@ -95,12 +95,20 @@ size.cov <- norm(Cov.mat)
 Cov.mat[1:10,1:10]
 #Calculate G_tau vector
 
-G_tau <- transfer.func(freq,tau = 1) #change the tau value to get different vectors
+taus <- c(2^(0:9), floor(N/3))
+est.var <- rep(NA, times = length(taus))
+
+for(i in 1:length(taus)){
+G_tau <- transfer.func(freq,tau = taus[i]) #change the tau value to get different vectors
 G_tau[1] <- 1
 #calculate variance for the AVAR estimate at the given tau
-t(G_tau)%*%(Cov.mat)%*%G_tau*(freq[2])^2
+est.var[i] <- t(G_tau)%*%(Cov.mat)%*%G_tau*(freq[2])^2
+}
 
-s##to delete
+comparison.mat <- rbind(apply(tmat, MARGIN = 2, FUN = var), est.var)
+
+
+##to delete
 tmat <- readRDS(file = "Code/Paper1/Results/tmat050523_W4_K6_N2048_300sims_WhiteNoiseNoGaps.Rds") #readRDS(file = "Code/Paper1/Results/bmat053123_W5_K9_N2048_300sims_FlickerNoiseNoGaps.Rds") #
 tmat %<>% t()
 dim(tmat) #each column is 300 tau estimates
