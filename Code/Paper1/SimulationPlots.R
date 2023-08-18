@@ -1,16 +1,17 @@
 ####################### Plots of Simulation Results ##########################
 library(magrittr)
-
-setwd("/home/cmb15/ClockDataAnalysis/Code/Paper1/")
+setwd("C:/Users/cmb15/OneDrive - UCB-O365/NIST/ClockDataAnalysis/Code/Paper1")
+#setwd("/home/cmb15/ClockDataAnalysis/Code/Paper1/")
 source("../SA_ImportantFunctions.R")
 ################# White Noise No Gaps ###################
-tmat <- readRDS(file = "Results/tmat050523_W12_K5_N2048_300sims_WhiteNoiseNoGaps.Rds")
+tmat <- readRDS(file = "Results/tmat050523_W4_K6_N2048_300sims_WhiteNoiseNoGaps.Rds")
 bmat <- readRDS("Results/bmat050523_W12_K4_N2048_300sims_WhiteNoiseNoGaps.Rds")
 oamat <- readRDS(file = "Results/oamat052623_N2048_300sims_WhiteNoiseNoGaps.Rds")
 
 ### Plots ###
-N <- 1024
+N <- 2048
 taus <- c(2^(0:9),floor(N/3))
+taus
 numberOfSimulations = 300
 
 ##tidy the data
@@ -62,8 +63,8 @@ ggplot(dat,aes(tau,measurement,col=method,group=interaction(tau,method)))+
   annotation_logticks()+
 
   ylab(expression(sigma^2*(tau)))+
-  xlab(expression(tau))+
-  ggtitle("White Noise Comparison, No Gaps")
+  xlab(expression(tau)) #+
+  #ggtitle("White Noise Comparison, No Gaps")
 
 
 ################# White Noise with Gaps #################
@@ -71,18 +72,13 @@ ggplot(dat,aes(tau,measurement,col=method,group=interaction(tau,method)))+
 
 
 ################ Flicker Noise No Gaps ##################
-tmat_flk <- readRDS(file = "Results/tmat052623_W3_K3_N2048_300sims_FlickerNoiseNoGaps.Rds")
-bmat_flk <- readRDS(file = "Results/bmat052623_W3_K3_N2048_300sims_FlickerNoiseNoGaps.Rds")
+tmat_flk <- readRDS(file = "Results/tmat053123_W5_K9_N2048_300sims_FlickerNoiseNoGaps.Rds")
+bmat_flk <- readRDS(file = "Results/bmat053123_W5_K9_N2048_300sims_FlickerNoiseNoGaps.Rds")
 oamat_flk <- readRDS(file = "Results/oamat053123_N2048_300sims_FlickerNoiseNoGaps.Rds")
 
 
 ### Plots ###
-N <- 1024
-taus <- c(2^(0:8),floor(N/3))
-numberOfSimulations = 300
-tmat_flk <- tmat
-bmat_flk <- bmat
-oamat_flk <- oamat
+
 ##tidy the data
 tmat_flk %<>% t()
 bmat_flk %<>% t()
@@ -125,8 +121,8 @@ ggplot(dat,aes(tau,measurement,col=method,group=interaction(tau,method)))+
   annotation_logticks()+
   
   ylab(expression(sigma^2*(tau)))+
-  xlab(expression(tau))+
-  ggtitle("Flicker Noise Comparison, No Gaps")
+  xlab(expression(tau)) #+
+  #ggtitle("Flicker Noise Comparison, No Gaps")
 
 
 
