@@ -290,7 +290,7 @@ Cov.mat_bronez <- matrix(NA, nrow = N.fourier, ncol = N.fourier)
 for(i in 1:N.fourier){
   j = 1
   while(j <= i){
-    Cov.mat_bronez[i,j] <- norm(Conj(t(tapers256[[i]]$weights))%*%(tapers256[[j]]$weights), type = "2") 
+    Cov.mat_bronez[i,j] <- norm(Conj(t(tapers256[[i]]$weights/sqrt(3)))%*%(tapers256[[j]]$weights/sqrt(3)), type = "2") 
     j = j+1
   }
 }
@@ -304,6 +304,112 @@ ggplot(specDF,aes(freq,spec.hat,ymin=spec.hat-2*sqrt(variance),ymax=spec.hat+2*s
   geom_errorbar()+
   geom_hline(yintercept = 1)
 ```
+
+## checking covmat
+
+If I simulate a bunch of data sets and estimate the spectrum, the frequency-wise variance I see in those estimates should match the diagnoal of the covariance estimate, which appears to be 1. 
+I don't need to recalculate the tapers, as those don't change when I keep the same timescale. 
+```{r}
+
+
+simOut=data.frame()
+for(i in 1:100){
+  x.t <- rnorm(N,0,1) 
+  
+  spec.hat <- rep(NA, times = N.fourier)
+
+  for(i in 1:length(freq)){
+    # print(i)
+    spec.hat[i] <- (1/K)*sum(abs(Conj(t(taper.mat[[i]]$weights))%*%x.t)^2)
+  }
+  
+  oneSimOut=data.frame(freq=freq,spec.hat=spec.hat)
+  
+  simOut=bind_rows(simOut,oneSimOut)
+}
+
+
+simSum=simOut %>% group_by(freq) %>%
+  summarise(lowerCI=quantile(spec.hat,.025),upperCI=quantile(spec.hat,.975))
+
+#compare var of simulated points to calc var
+
+ugh=simOut %>% group_by(freq) %>% summarise(var=var(spec.hat))
+mean(ugh$var)
+diag(Cov.mat_bronez)
+```
+
+
+## calculate avar and unc
+
+```{r}
+transfer.func <- function(f,tau){
+  4*sin(pi*f*tau)^4/(tau*sin(pi*f))^2
+}
+
+calcAvar=function(thetau,freq,spec.hat){
+  # G_tau vector length number of frequencies 
+  G_tau <- transfer.func(freq,tau = thetau) #change the tau value to get different vectors
+  G_tau[1] <- 0 # this was 1 in the old code, but should be 0
+  
+  adev=sqrt(G_tau%*%spec.hat)
+  
+  return(adev)
+}
+
+taus <- 2^(0:9)
+taus <- taus[taus<floor(N/3)]
+taus<-c(taus,N)
+
+adevOut=data.frame()
+for(i in 1:10){
+  x.t <- rnorm(N,0,1)
+  # x.t[omitted] <- NA #take out values
+  
+  for(f in 1:length(freq)){
+    # print(i)
+    spec.hat[f] <- (1/K)*sum(abs(Conj(t(taper.mat[[f]]$weights))%*%x.t)^2)
+  }
+  
+  adev=numeric(length(taus))
+  for(j in 1:length(taus)){
+    adev[j]=calcAvar(taus[j],freq,spec.hat)
+  }
+
+  adevOut=bind_rows(adevOut,data.frame(tau=taus,adev=adev))
+  # oneSimOut=data.frame(freq=freq,spec.hat=test_chave$spectrum)
+  # 
+  # simOut=bind_rows(simOut,oneSimOut)
+}
+
+adevOut %>% group_by(tau) %>% summarise(var=var(adev),mean=mean(adev))
+
+##do just one for covmat
+cov.mat=adev=numeric(length(taus))
+
+for(i in 1:length(taus)){
+  G_tau <- transfer.func(freq,tau = taus[i]) #change the tau value to get different vectors
+  G_tau[1] <- 0 # this was 1 in the old code, but should be 0
+  # G_tau vector length number of frequencies 
+  
+  adev[i]=sqrt(G_tau%*%spec.hat)
+  
+  #calculate variance for the AVAR estimate at the given tau
+  # cov.mat.calc[i] <- t(G_tau)%*%(Cov.mat_chave)%*%G_tau*(0.5/256)^2
+  cov.mat[i] <- t(G_tau)%*%(Cov.mat_bronez)%*%G_tau*(0.5/N)^2
+  # sample.var <- var(tmat[i,])
+  # print(abs(cov.mat.calc-sample.var)/sample.var)
+}
+
+sqrt(cov.mat)
+ugh=adevOut %>% group_by(tau) %>% summarise(var=var(adev),mean=mean(adev))
+cov.mat
+ugh$var
+round(cov.mat,4)
+
+```
+
+This code seems to behave strangely for no missing data case, I don't understand why. 
 
 ## Chave approach
 
@@ -347,6 +453,70 @@ ggplot(specDF_both,aes(freq,spec.hat,ymin=spec.hat-2*sqrt(variance),ymax=spec.ha
 
 
 
+## calculate avar and unc
+
+```{r}
+transfer.func <- function(f,tau){
+  4*sin(pi*f*tau)^4/(tau*sin(pi*f))^2
+}
+
+calcAvar=function(thetau,freq,spec.hat){
+  # G_tau vector length number of frequencies 
+  G_tau <- transfer.func(freq,tau = thetau) #change the tau value to get different vectors
+  G_tau[1] <- 0 # this was 1 in the old code, but should be 0
+  
+  adev=sqrt(G_tau%*%spec.hat)
+  
+  return(adev)
+}
+
+taus <- 2^(0:9)
+taus <- taus[taus<floor(N/3)]
+taus<-c(taus,N)
+
+adevOut=data.frame()
+for(i in 1:10){
+  x.t <- rnorm(N,0,1)
+  # x.t[omitted] <- NA #take out values
+  
+  test_chave <- multitaper_est(X.t = x.t, W = 4/N, K = 3)
+
+  adev=numeric(length(taus))
+  for(j in 1:length(taus)){
+    adev[j]=calcAvar(taus[j],freq,test_chave$spectrum)
+  }
+
+  adevOut=bind_rows(adevOut,data.frame(tau=taus,adev=adev))
+  # oneSimOut=data.frame(freq=freq,spec.hat=test_chave$spectrum)
+  # 
+  # simOut=bind_rows(simOut,oneSimOut)
+}
+
+adevOut %>% group_by(tau) %>% summarise(var=var(adev),mean=mean(adev))
+
+##do just one for covmat
+cov.mat=adev=numeric(length(taus))
+
+for(i in 1:length(taus)){
+  G_tau <- transfer.func(freq,tau = taus[i]) #change the tau value to get different vectors
+  G_tau[1] <- 0 # this was 1 in the old code, but should be 0
+  # G_tau vector length number of frequencies 
+  
+  adev[i]=sqrt(G_tau%*%test_chave$spectrum)
+  
+  #calculate variance for the AVAR estimate at the given tau
+  # cov.mat.calc[i] <- t(G_tau)%*%(Cov.mat_chave)%*%G_tau*(0.5/256)^2
+  cov.mat[i] <- t(G_tau)%*%(Cov.mat_chave)%*%G_tau*(0.5/N)^2
+  # sample.var <- var(tmat[i,])
+  # print(abs(cov.mat.calc-sample.var)/sample.var)
+}
+
+sqrt(cov.mat)
+ugh=adevOut %>% group_by(tau) %>% summarise(var=var(adev),mean=mean(adev))
+cov.mat-ugh$var
+round(cov.mat,4)
+
+```
 
 
 
@@ -606,3 +776,132 @@ ggplot(specDF_both,aes(freq,spec.hat,ymin=spec.hat-2*sqrt(variance),ymax=spec.ha
   geom_errorbar()+
   geom_hline(yintercept = 1)
 ```
+
+
+
+
+
+
+
+
+## Proceeding with the Chave approach
+
+We move forward with the Chave approach, since the results look similar for the two methods and any differences can be attributed to computational differences and instabilities in the the eigenvalue decompostion. 
+
+## Allan deviation with Chave approach
+
+Our goal is to characterize the stability of the system, which is typically done via the Allan variance. The Allan variance, or two-sample variance, is calculated as 
+
+\[
+\sigma^2_y(2; \tau) = \frac{1}{2} E \{ [\bar y _t(\tau)-\bar y _{t-\tau}(\tau)]^2 \}
+\]
+which is half the variance of $\bar z_t(\tau)=\bar y _t(\tau)-\bar y _{t-\tau}(\tau)$, where $\bar y _t(\tau) = \frac{1}{\tau} \sum_{t=0}^{\tau-1}y_{t-\tau}$. Using the theory of linear filters, the sdf of $\bar z_t(\tau)$ can be derived from the sdf of $y$:
+
+\[
+S_{\bar z_t(\tau)}(f)=\frac{4 \mbox{sin}^4}{}
+\]
+
+```{r}
+
+taus <- 2^(0:9)
+
+taus <- taus[taus<floor(N/3)]
+taus<-c(taus,N)
+
+transfer.func <- function(f,tau){
+4*sin(pi*f*tau)^4/(tau*sin(pi*f))^2
+}
+
+
+cov.mat=adev=numeric(length(taus))
+for(i in 1:length(taus)){
+  G_tau <- transfer.func(freq,tau = taus[i]) #change the tau value to get different vectors
+  G_tau[1] <- 0 # this was 1 in the old code, but should be 0
+  # G_tau vector length number of frequencies 
+  
+  adev[i]=sqrt(G_tau%*%test_chave$spectrum)
+  
+  #calculate variance for the AVAR estimate at the given tau
+  # cov.mat.calc[i] <- t(G_tau)%*%(Cov.mat_chave)%*%G_tau*(0.5/256)^2
+  cov.mat[i] <- t(G_tau)%*%(Cov.mat_chave)%*%G_tau
+  # sample.var <- var(tmat[i,])
+  # print(abs(cov.mat.calc-sample.var)/sample.var)
+}
+
+adev
+sqrt(1/N) #matches!
+sqrt(cov.mat)
+```
+
+
+## Compare to results from simulations
+
+
+## calculate avar and unc
+
+```{r}
+transfer.func <- function(f,tau){
+  4*sin(pi*f*tau)^4/(tau*sin(pi*f))^2
+}
+
+calcAvar=function(thetau,freq,spec.hat){
+  # G_tau vector length number of frequencies 
+  G_tau <- transfer.func(freq,tau = thetau) #change the tau value to get different vectors
+  G_tau[1] <- 0 # this was 1 in the old code, but should be 0
+  
+  avar=G_tau%*%spec.hat
+  
+  return(avar)
+}
+
+taus <- 2^(0:9)
+taus <- taus[taus<floor(N/3)]
+taus<-c(taus,N)
+
+avarOut=data.frame()
+for(i in 1:10){
+  x.t <- rnorm(N,0,1)
+  # x.t[omitted] <- NA #take out values
+  
+  for(f in 1:length(freq)){
+    # print(i)
+    spec.hat[f] <- (1/K)*sum(abs(Conj(t(taper.mat[[f]]$weights))%*%x.t)^2)
+  }
+  
+  avar=numeric(length(taus))
+  for(j in 1:length(taus)){
+    avar[j]=calcAvar(taus[j],freq,spec.hat)
+  }
+
+  avarOut=bind_rows(avarOut,data.frame(tau=taus,avar=avar))
+  # oneSimOut=data.frame(freq=freq,spec.hat=test_chave$spectrum)
+  # 
+  # simOut=bind_rows(simOut,oneSimOut)
+}
+
+avarOut %>% group_by(tau) %>% summarise(var=var(avar),mean=mean(avar))
+
+##do just one for covmat
+cov.mat=avar=numeric(length(taus))
+
+for(i in 1:length(taus)){
+  G_tau <- transfer.func(freq,tau = taus[i]) #change the tau value to get different vectors
+  G_tau[1] <- 0 # this was 1 in the old code, but should be 0
+  # G_tau vector length number of frequencies 
+  
+  avar[i]=G_tau%*%spec.hat
+  
+  #calculate variance for the AVAR estimate at the given tau
+  # cov.mat.calc[i] <- t(G_tau)%*%(Cov.mat_chave)%*%G_tau*(0.5/256)^2
+  cov.mat[i] <- t(G_tau)%*%(Cov.mat_bronez)%*%G_tau#*(0.5/N)^2
+  # sample.var <- var(tmat[i,])
+  # print(abs(cov.mat.calc-sample.var)/sample.var)
+}
+
+sqrt(cov.mat)
+ugh=avarOut %>% group_by(tau) %>% summarise(var=var(avar),mean=mean(avar))
+cov.mat-ugh$var
+round(cov.mat,4)
+
+```
+
