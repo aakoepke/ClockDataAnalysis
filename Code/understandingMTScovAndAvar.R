@@ -30,33 +30,33 @@ V.mat <- get_tapers(t.vec, W = 4/N, K = numTapers)
 simOut=data.frame()
 
 for(i in 1:numberOfSimulations){
-  ##simulate new dataset with same spacing
-  x.t <- rnorm(sizeOfData) #data
-  x.t[omitted] <- NA #take out values
-  
-  ##calculate S.hat
-  # test_chave <- multitaper_est(X.t = x.t, W = 4/N, K = 3) #old method, calculates tapers and spectrum
-  MTSE_full <- MT_spectralEstimate(x.t, V.mat$tapers) #new function, calculates just spectrum
-  ##comparing these 2 estimates
-  # plot(MTSE_full$freqs,MTSE_full$spectrum)
-  # points(freq,test_chave$spectrum,col="red")
-  ## ??? unclear to me why these are different, should not be, maybe small differences in the code?
-  # oneSimOut=data.frame(freq=freq,spec.hat=test_chave$spectrum)
-  oneSimOut=data.frame(freq=freq,spec.hat=MTSE_full$spectrum)
-  
-  simOut=bind_rows(simOut,oneSimOut)
+##simulate new dataset with same spacing
+x.t <- rnorm(sizeOfData) #data
+x.t[omitted] <- NA #take out values
+
+##calculate S.hat
+# test_chave <- multitaper_est(X.t = x.t, W = 4/N, K = 3) #old method, calculates tapers and spectrum
+MTSE_full <- MT_spectralEstimate(x.t, V.mat$tapers) #new function, calculates just spectrum
+##comparing these 2 estimates
+# plot(MTSE_full$freqs,MTSE_full$spectrum)
+# points(freq,test_chave$spectrum,col="red")
+## ??? unclear to me why these are different, should not be, maybe small differences in the code?
+# oneSimOut=data.frame(freq=freq,spec.hat=test_chave$spectrum)
+oneSimOut=data.frame(freq=freq,spec.hat=MTSE_full$spectrum)
+
+simOut=bind_rows(simOut,oneSimOut)
 }
 
 ### calculate the covariance matrix 
 Cov.mat_chave <- matrix(NA, nrow = N.fourier, ncol = N.fourier)
 
 for(i in 1:N.fourier){
-  j = 1
-  while(j <= i){
-    Cov.mat_chave[i,j] <- norm(Conj(t(V.mat$tapers*exp(-im*2*pi*freq[i]*t.vec)*(1/sqrt(numTapers))))%*%(V.mat$tapers*exp(-im*2*pi*freq[j]*t.vec)*(1/sqrt(numTapers))), type = "2") 
-    ####I added the 1/sqrt(numTapers) factor, seems necessary to get the simulations and the formula to match and makes sense given the Bronez normalization 
-    j = j+1
-  }
+j = 1
+while(j <= i){
+  Cov.mat_chave[i,j] <- norm(Conj(t(V.mat$tapers*exp(-im*2*pi*freq[i]*t.vec)*(1/sqrt(numTapers))))%*%(V.mat$tapers*exp(-im*2*pi*freq[j]*t.vec)*(1/sqrt(numTapers))), type = "2") 
+  ####I added the 1/sqrt(numTapers) factor, seems necessary to get the simulations and the formula to match and makes sense given the Bronez normalization 
+  j = j+1
+}
 }
 
 Cov.mat_chave[upper.tri(Cov.mat_chave)] <- t(Cov.mat_chave)[upper.tri(Cov.mat_chave)]
@@ -102,7 +102,7 @@ geom_point()
 #############################################################################################
 
 transfer.func <- function(f,tau){
-  4*sin(pi*f*tau)^4/(tau*sin(pi*f))^2
+4*sin(pi*f*tau)^4/(tau*sin(pi*f))^2
 }
 
 ## testing the transfer function, looks like the plot in Reappraisal paper
@@ -114,34 +114,33 @@ abline(v=c(1/16,1/8,.125))
 
 
 calcAvar=function(thetau,freq,spec.hat,delta.f){
-  # G_tau vector length number of frequencies 
-  G_tau <- transfer.func(freq,tau = thetau) #change the tau value to get different vectors
-  G_tau[1] <- 0 # this was 1 in the old code, but should be 0
+# G_tau vector length number of frequencies 
+G_tau <- transfer.func(freq,tau = thetau) #change the tau value to get different vectors
+G_tau[1] <- 0 # this was 1 in the old code, but should be 0
 
-  avar=G_tau%*%spec.hat*delta.f
+avar=G_tau%*%spec.hat*delta.f
 
-  return(avar)
+return(avar)
 }
 
 
 taus <- 2^(0:9)
 taus <- taus[taus<floor(N/3)]
-# taus<-c(taus,N) # I can't get this code to work for tau=N yet, but I think it should be able to...
 
 
 avarOut=data.frame()
 for(i in 1:numberOfSimulations){
-  x.t <- rnorm(sizeOfData) #data
-  x.t[omitted] <- NA #take out values
+x.t <- rnorm(sizeOfData) #data
+x.t[omitted] <- NA #take out values
 
-  spec.hat <- MT_spectralEstimate(x.t, V.mat$tapers)
+spec.hat <- MT_spectralEstimate(x.t, V.mat$tapers)
 
-  avar=numeric(length(taus))
-  for(j in 1:length(taus)){
-    avar[j]=calcAvar(taus[j],freq,spec.hat$spectrum,delta.f)
-  }
+avar=numeric(length(taus))
+for(j in 1:length(taus)){
+  avar[j]=calcAvar(taus[j],freq,spec.hat$spectrum,delta.f)
+}
 
-  avarOut=bind_rows(avarOut,data.frame(tau=taus,avar=avar))
+avarOut=bind_rows(avarOut,data.frame(tau=taus,avar=avar))
 }
 
 avarSimSum=avarOut %>% group_by(tau) %>% summarise(var=var(avar),mean=mean(avar),adev=mean(sqrt(avar)))
@@ -150,17 +149,17 @@ avarSimSum=avarOut %>% group_by(tau) %>% summarise(var=var(avar),mean=mean(avar)
 cov.mat=avar=numeric(length(taus))
 
 for(i in 1:length(taus)){
-  #taken from above, need to calculate the covariance
-  G_tau <- transfer.func(freq,tau = taus[i]) 
-  G_tau[1] <- 0 
-  
-  avar[i]=calcAvar(taus[i],freq,spec.hat$spectrum,delta.f)
-  
-  #calculate variance for the AVAR estimate at the given tau
-  # cov.mat.calc[i] <- t(G_tau)%*%(Cov.mat_chave)%*%G_tau*(0.5/256)^2
-  cov.mat[i] <- t(G_tau)%*%(Cov.mat_chave)%*%G_tau*(delta.f)^2#/(sqrt(numTapers)) #can't tell if this term should be here, details below
-  # sample.var <- var(tmat[i,])
-  # print(abs(cov.mat.calc-sample.var)/sample.var)
+#taken from above, need to calculate the covariance
+G_tau <- transfer.func(freq,tau = taus[i]) 
+G_tau[1] <- 0 
+
+avar[i]=calcAvar(taus[i],freq,spec.hat$spectrum,delta.f)
+
+#calculate variance for the AVAR estimate at the given tau
+# cov.mat.calc[i] <- t(G_tau)%*%(Cov.mat_chave)%*%G_tau*(0.5/256)^2
+cov.mat[i] <- t(G_tau)%*%(Cov.mat_chave)%*%G_tau*(delta.f)^2#/(sqrt(numTapers)) #can't tell if this term should be here, details below
+# sample.var <- var(tmat[i,])
+# print(abs(cov.mat.calc-sample.var)/sample.var)
 }
 
 
@@ -177,15 +176,15 @@ sqrt(numTapers)
 ### plot code below taken from SimulationPlots.R
 ### This plot looks at the distribution of the simulated data spectral avar estimates
 ggplot(avarOut,aes(tau,avar,group=(tau)))+
-  geom_boxplot(lwd = 1.2)+
-  ### add true straight line below
-  geom_abline(slope = -1,intercept = 0,size=1)+
-  theme(legend.position = c(.15, .2))+
-  scale_y_log10()+
-  scale_x_log10()+
-  annotation_logticks()+
-  ylab(expression(sigma^2*(tau)))+
-  xlab(expression(tau)) 
+geom_boxplot(lwd = 1.2)+
+### add true straight line below
+geom_abline(slope = -1,intercept = 0,size=1)+
+theme(legend.position = c(.15, .2))+
+scale_y_log10()+
+scale_x_log10()+
+annotation_logticks()+
+ylab(expression(sigma^2*(tau)))+
+xlab(expression(tau)) 
 ### looks like they follow expected the line well
 
 ################################
@@ -194,29 +193,29 @@ ggplot(avarOut,aes(tau,avar,group=(tau)))+
 
 oldavars <- data.frame()
 for(i in 1:numberOfSimulations){
-  set.seed(i)
-  print(i)
-  #generate X.t
-  X.t <- rnorm(N,mean = 0, sd = 1)
-  
-  # avar.calc <- getAvars(N,X.t, taus = taus[-length(taus)])
-  avar.calc <- getAvars(N,X.t, taus = taus)
-  temp=data.frame(tau=avar.calc$avarRes$taus,avar=avar.calc$avarRes$avars)
-  
-  oldavars=bind_rows(oldavars,temp)
+set.seed(i)
+print(i)
+#generate X.t
+X.t <- rnorm(N,mean = 0, sd = 1)
+
+# avar.calc <- getAvars(N,X.t, taus = taus[-length(taus)])
+avar.calc <- getAvars(N,X.t, taus = taus)
+temp=data.frame(tau=avar.calc$avarRes$taus,avar=avar.calc$avarRes$avars)
+
+oldavars=bind_rows(oldavars,temp)
 }
 
 ### This plot looks at the distribution of the simulated data avar estimates via old method
 ggplot(oldavars,aes(tau,avar,group=(tau)))+
-  geom_boxplot(lwd = 1.2)+
-  ### add true straight line below
-  geom_abline(slope = -1,intercept = 0,size=1)+
-  theme(legend.position = c(.15, .2))+
-  scale_y_log10()+
-  scale_x_log10()+
-  annotation_logticks()+
-  ylab(expression(sigma^2*(tau)))+
-  xlab(expression(tau)) 
+geom_boxplot(lwd = 1.2)+
+### add true straight line below
+geom_abline(slope = -1,intercept = 0,size=1)+
+theme(legend.position = c(.15, .2))+
+scale_y_log10()+
+scale_x_log10()+
+annotation_logticks()+
+ylab(expression(sigma^2*(tau)))+
+xlab(expression(tau)) 
 
 
 ### plot them both to see how they compare
@@ -226,14 +225,14 @@ avarOut$method="spectrum"
 
 allRes=bind_rows(oldavars,avarOut)
 ggplot(allRes,aes(tau,avar,col=method,group=interaction(tau,method)))+
-  geom_boxplot(lwd = 1.2)+
-  ### add true straight line below
-  geom_abline(slope = -1,intercept = 0,size=1)+
-  scale_y_log10()+
-  scale_x_log10()+
-  annotation_logticks()+
-  ylab(expression(sigma^2*(tau)))+
-  xlab(expression(tau)) 
+geom_boxplot(lwd = 1.2)+
+### add true straight line below
+geom_abline(slope = -1,intercept = 0,size=1)+
+scale_y_log10()+
+scale_x_log10()+
+annotation_logticks()+
+ylab(expression(sigma^2*(tau)))+
+xlab(expression(tau)) 
 
 ### results look similar, spectral looks tighter especially for higher tau
 
@@ -241,8 +240,8 @@ oldMethodSum=oldavars %>% group_by(tau) %>% summarise(mean=mean(avar),var=var(av
 simRes=avarOut %>% group_by(tau) %>% summarise(mean=mean(avar),var=var(avar))
 
 allvar=data.frame(tau=rep(taus,3),
-       method=rep(c("calculated","SpectralSim","oldSim"),each=length(taus)),
-       var=c(cov.mat,simRes$var,oldMethodSum$var))
+     method=rep(c("calculated","SpectralSim","oldSim"),each=length(taus)),
+     var=c(cov.mat,simRes$var,oldMethodSum$var))
 ggplot(allvar,aes(tau,var,col=method))+
 geom_point()+
 scale_y_log10()+
@@ -259,14 +258,17 @@ round(cov.mat,4)
 
 cov.mat/simRes$var
 sqrt(numTapers)
-### seem to be off by a factor of sqrt(numTapers), but gets closer as tau increases. I can't explain this. 
+### seems to be off by a factor of sqrt(numTapers) (?), but gets closer as tau increases? maybe? 
+### I can't explain this or tell if this is real. After looking at it with higher numberOfSimulations
+### and sizeOfData, I'm not sure it's related to K. 
 ### If I add a 1/sqrt(numTapers) to the cov.mat for the avar, the variance ratio is much closer to 1, except for higher tau
 ### Is there intuition for why the spectral avar would be more variable for higher tau than expected? Like with the old method (effectively less data)
 oldMethodSum$var-simRes$var
 
-
 ###############################################################################
-### can I calculate avar for tau =N
+# CAIT ignore below here, just playing around
+###############################################################################
+### can I calculate avar for tau =N?
 ## testing the transfer function, looks like the plot in Reappraisal paper
 plot(freq,G_tau <- transfer.func(freq,tau = 1),type="l")
 points(freq,G_tau <- transfer.func(freq,tau = N),type="l")
@@ -275,7 +277,7 @@ points(freq,G_tau <- transfer.func(freq,tau = N/2),type="l")
 
 ## this is my problem, G_tau is essentially 0 here
 
-G_tau <- transfer.func(1/N,tau = N) #change the tau value to get different vectors
+G_tau <- transfer.func(freq,tau = N) #change the tau value to get different vectors
 G_tau[1] <- 0
 
 avar_N=G_tau%*%spec.hat$spectrum
