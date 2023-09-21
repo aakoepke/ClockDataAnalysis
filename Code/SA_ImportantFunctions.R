@@ -186,6 +186,31 @@ MT_spectralEstimate <- function(X.t, V.mat){
   return(list("spectrum" = S.x.hat, "freqs" = freqs))
 }
 
+
+MT_spectralEstimate_freqs <- function(X.t, freqs, V.mat){
+  im <- complex(real = 0, imaginary = 1)
+  X.t <- X.t - mean(X.t, na.rm = TRUE) #demean
+  N.long <- length(X.t)
+  t.n <- 1:N.long
+  missing.indices <- which(is.na(X.t))
+  t.n[which(is.na(X.t))] <- NA
+  t.n_m <- rdist(na.omit(t.n))[1,]
+  
+  ##use tapers to generate spectral estimate
+  N <- length(na.omit(t.n))
+  S.x.hat <- rep(NA, times = length(freqs))
+  K <- dim(V.mat)[2]
+  
+  for(j in 1:length(freqs)){
+    k.vec <- rep(NA,times = K)
+    for(k in 1:K){
+      inner.sum <- sum(V.mat[,k]*na.exclude(X.t)*exp(-im*2*pi*freqs[j]*t.n_m))
+      k.vec[k] <- abs(inner.sum)^2
+    }
+    S.x.hat[j] <- mean(k.vec)
+  }
+  return(list("spectrum" = S.x.hat, "freqs" = freqs))
+}
 ######################################################################################################
 ###### Calculate sigma.hat_tau using transfer function method (see "reappraisal...", page 70) ########
 ######################################################################################################
