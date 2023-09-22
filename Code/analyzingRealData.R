@@ -42,7 +42,7 @@ calcAvar=function(thetau,freq,spec.hat,delta.f){
   return(avar)
 }
 
-calculateAvars=function(x.t,t.vec,taus,N.fourier=100,numTapers=3,calcCov){
+calculateAvars=function(x.t,t.vec,taus,N.fourier=100,numTapers=3,calcCov,myW){
   N <- length(t.vec)
   # N.fourier <- 1000#floor(N/2) + 1
   freq <- seq(0,0.5, length.out = N.fourier)
@@ -50,7 +50,7 @@ calculateAvars=function(x.t,t.vec,taus,N.fourier=100,numTapers=3,calcCov){
   delta.f <- freq[2] #interval spacing between frequencies, needed for spectral avar calculation
   
   ##calculate tapers for this data spacing
-  V.mat <- get_tapers(t.vec, W = 4/N, K = numTapers)
+  V.mat <- get_tapers(t.vec, W = myW, K = numTapers) #W was 4/N
 
   MTSE_full <- MT_spectralEstimate_freqs(x.t, freq, V.mat$tapers) 
   
@@ -96,131 +96,215 @@ calculateAvars=function(x.t,t.vec,taus,N.fourier=100,numTapers=3,calcCov){
   allRes=bind_rows(oldRes,overRes,spectralRes)
   
   return(list(x.t=x.t,t.vec=t.vec,V.mat=V.mat,MTSE_full=MTSE_full,
-              freq=freq,Cov.mat_chave=Cov.mat_chave,avarOut=avarOut,allAvarRes=allRes))
+              freq=freq,Cov.mat_chave=Cov.mat_chave,avarOut=avarOut,allAvarRes=allRes,W=myW))
 }
 
 startTime=Sys.time()
-######################################################################
-## AlYb
-######################################################################
-AlYbdat040318=filter(dat180403long,Ratio=="AlYb" & missing==F)
-t.vec <- AlYbdat040318$seconds
-x.t=AlYbdat040318$FracDiff
-resName="AlYb040318_500"
-
-###below stays the same
-N=length(x.t)
-taus <- 2^(0:9)
-taus <- taus[taus<floor(N/3)]
-# floor(N/2) + 1
-res=calculateAvars(x.t,t.vec,taus,N.fourier=500,numTapers=3,calcCov = T)
-saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
-
-######################################################################
-## AlSr
-######################################################################
-AlSrdat040318=filter(dat180403long,Ratio=="AlSr" & missing==F)
-t.vec <- AlSrdat040318$seconds
-x.t=AlSrdat040318$FracDiff
-resName="AlSr040318"
-
-###below stays the same
-N=length(x.t)
-taus <- 2^(0:9)
-taus <- taus[taus<floor(N/3)]
-
-res=calculateAvars(x.t,t.vec,taus,N.fourier=floor(N/2) + 1,numTapers=3,calcCov = T)
-saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
-
-######################################################################
-## SrYb
-######################################################################
-SrYbdat040318=filter(dat180403long,Ratio=="SrYb" & missing==F)
-t.vec <- SrYbdat040318$seconds
-x.t=SrYbdat040318$FracDiff
-resName="SrYb040318"
-
-###below stays the same
-N=length(x.t)
-taus <- 2^(0:9)
-taus <- taus[taus<floor(N/3)]
-
-res=calculateAvars(x.t,t.vec,taus,N.fourier=floor(N/2) + 1,numTapers=3,calcCov = T)
-saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
-
-Sys.time()-startTime
-
-
-
-# #####################look at res
+# ######################################################################
+# ## AlYb
+# ######################################################################
+# AlYbdat040318=filter(dat180403long,Ratio=="AlYb" & missing==F)
+# t.vec <- AlYbdat040318$seconds
+# x.t=AlYbdat040318$FracDiff
+# resName="AlYb040318_500"
+# 
+# ###below stays the same
+# N=length(x.t)
+# taus <- 2^(0:9)
+# taus <- taus[taus<floor(N/3)]
+# # floor(N/2) + 1
+# res=calculateAvars(x.t,t.vec,taus,N.fourier=500,numTapers=3,calcCov = T)
+# saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
+# 
+# ######################################################################
+# ## AlSr
+# ######################################################################
+# AlSrdat040318=filter(dat180403long,Ratio=="AlSr" & missing==F)
+# t.vec <- AlSrdat040318$seconds
+# x.t=AlSrdat040318$FracDiff
 # resName="AlSr040318"
+# 
+# ###below stays the same
+# N=length(x.t)
+# taus <- 2^(0:9)
+# taus <- taus[taus<floor(N/3)]
+# 
+# res=calculateAvars(x.t,t.vec,taus,N.fourier=floor(N/2) + 1,numTapers=3,calcCov = T)
+# saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
+# 
+# ######################################################################
+# ## SrYb
+# ######################################################################
+# SrYbdat040318=filter(dat180403long,Ratio=="SrYb" & missing==F)
+# t.vec <- SrYbdat040318$seconds
+# x.t=SrYbdat040318$FracDiff
 # resName="SrYb040318"
-resName="AlYb040318res"
-
-res=readRDS(file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
-res$V.mat$e.values
-
-plot(log10(res$MTSE_full$freqs),log10(res$MTSE_full$spectrum),type="l")
-
-### plot avar
-ggplot(res$avarOut,aes(tau,avar,ymin=avar-var,ymax=avar+var))+
-  geom_point()+
-  geom_errorbar()+
-  ### add true straight line below
-  geom_abline(slope = -1,intercept = 0,size=1)+
-  theme(legend.position = c(.15, .2))+
-  scale_y_log10()+
-  scale_x_log10()+
-  annotation_logticks()+
-  ylab(expression(sigma^2*(tau)))+
-  xlab(expression(tau))
-
-ggplot(res$allAvarRes,aes(tau,avar,col=calculation))+
-  geom_point()+
-  ### add true straight line below
-  geom_abline(slope = -1,intercept = 0,size=1)+
-  theme(legend.position = c(.15, .2))+
-  scale_y_log10()+
-  scale_x_log10()+
-  annotation_logticks()+
-  ylab(expression(sigma^2*(tau)))+
-  xlab(expression(tau))
-
-
-
-
-
+# 
+# ###below stays the same
+# N=length(x.t)
+# taus <- 2^(0:9)
+# taus <- taus[taus<floor(N/3)]
+# 
+# res=calculateAvars(x.t,t.vec,taus,N.fourier=floor(N/2) + 1,numTapers=3,calcCov = T)
+# saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
+# 
+# Sys.time()-startTime
+# 
+# 
+# 
+# # #####################look at res
+# # resName="AlSr040318"
+# # resName="SrYb040318"
+# resName="AlYb040318res"
+# 
+# res=readRDS(file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
+# res$V.mat$e.values
+# 
+# plot(log10(res$MTSE_full$freqs),log10(res$MTSE_full$spectrum),type="l")
+# 
+# ### plot avar
+# ggplot(res$avarOut,aes(tau,avar,ymin=avar-var,ymax=avar+var))+
+#   geom_point()+
+#   geom_errorbar()+
+#   ### add true straight line below
+#   geom_abline(slope = -1,intercept = 0,size=1)+
+#   theme(legend.position = c(.15, .2))+
+#   scale_y_log10()+
+#   scale_x_log10()+
+#   annotation_logticks()+
+#   ylab(expression(sigma^2*(tau)))+
+#   xlab(expression(tau))
+# 
+# ggplot(res$allAvarRes,aes(tau,avar,col=calculation))+
+#   geom_point()+
+#   ### add true straight line below
+#   geom_abline(slope = -1,intercept = 0,size=1)+
+#   theme(legend.position = c(.15, .2))+
+#   scale_y_log10()+
+#   scale_x_log10()+
+#   annotation_logticks()+
+#   ylab(expression(sigma^2*(tau)))+
+#   xlab(expression(tau))
+# 
+# 
+# 
+# 
+# 
 
 ######################################################################
 ## simdat
 ######################################################################
-AlSrdat040318=filter(dat180403long,Ratio=="AlSr" & missing==F)
-t.vec <- AlSrdat040318$seconds
-x.t=rnorm(length(t.vec))
-resName="simDat"
+# AlSrdat040318=filter(dat180403long,Ratio=="AlSr" & missing==F)
+# t.vec <- AlSrdat040318$seconds
+# x.t=rnorm(length(t.vec))
+# resName="simDat"
+# 
+# ###below stays the same
+# N=length(x.t)
+# taus <- 2^(0:9)
+# taus <- taus[taus<floor(N/3)]
+# # floor(N/2) + 1
+# today=format(Sys.Date(),format="%b%d")
+# 
+# N.fourier=200
+# resName=paste("simDat",N.fourier,today,sep="_")
+# freq <- seq(0,0.5, length.out = N.fourier)
+# res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=3,calcCov = T,myW = freq[2]/2)
+# saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
+# 
+# N.fourier=500
+# resName=paste("simDat",N.fourier,today,sep="_")
+# freq <- seq(0,0.5, length.out = N.fourier)
+# res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=3,calcCov = T,myW = freq[2]/2)
+# saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
+# 
+# N.fourier=1000
+# resName=paste("simDat",N.fourier,today,sep="_")
+# freq <- seq(0,0.5, length.out = N.fourier)
+# res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=3,calcCov = T,myW = freq[2])
+# saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
+# 
+# N.fourier=2000
+# resName=paste("simDat",N.fourier,today,sep="_")
+# freq <- seq(0,0.5, length.out = N.fourier)
+# res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=3,calcCov = T,myW = freq[2]*2)
+# saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
+# 
+# 
+# # change width of analysis band
+# # look at tapers and eig vals, how change
+# 
+
+
+#########################simulate real data
+
+######Noise Generation####
+library(RobPer)
+
+# #White Noise
+# y <- TK95(N = 2000, alpha = 0)
+# t <- seq(along = y)
+# plot(t,y,type = "l", main = "white noise", ylab = "y", xlab = "t")
+# 
+# #Flicker (Pink) Noise
+# y <- TK95(N = 2000, alpha = 1)
+# t <- seq(along = y)
+# plot(t,y,type = "l", main = "flicker noise", ylab = "y", xlab = "t")
+# 
+# #Random Walk
+# y<- TK95(N = 2000, alpha = 2)
+# t <- seq(along = y)
+# plot(t,y,type = "l", main = "random walk noise", ylab = "y", xlab = "t")
+
+
+
+AlSrdat040318=filter(dat180403long,Ratio=="AlSr" & seconds <210000 & seconds>200001)
+t.vec <- filter(AlSrdat040318,missing==F)$seconds
+plot(AlSrdat040318$seconds,AlSrdat040318$FracDiff)
+
+allN=length(t.vec[1]:t.vec[length(t.vec)])
+
+########white noise
+x.t=TK95(N = allN,alpha=0)
+x.t=x.t[AlSrdat040318$missing==F]
+simType="whiteNoiseSimTK95"
+plot(t.vec,x.t)
 
 ###below stays the same
 N=length(x.t)
 taus <- 2^(0:9)
 taus <- taus[taus<floor(N/3)]
 # floor(N/2) + 1
-resName="simDat100"
-res=calculateAvars(x.t,t.vec,taus,N.fourier=100,numTapers=3,calcCov = T)
+today=format(Sys.Date(),format="%b%d")
+
+N.fourier=100
+resName=paste(simType,N.fourier,today,sep="_")
+freq <- seq(0,0.5, length.out = N.fourier)
+res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=3,calcCov = T,myW = freq[2])
+res$V.mat$e.values
 saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
 
-resName="simDat500"
-res=calculateAvars(x.t,t.vec,taus,N.fourier=500,numTapers=3,calcCov = T)
+plot(res$freq,res$MTSE_full$spectrum)
+
+#########Flicker (Pink) Noise
+x.t=TK95(N = allN,alpha=1)
+x.t=x.t[AlSrdat040318$missing==F]
+simType="flickerNoiseSimTK95"
+plot(t.vec,x.t)
+
+###below stays the same
+N=length(x.t)
+taus <- 2^(0:9)
+taus <- taus[taus<floor(N/3)]
+# floor(N/2) + 1
+today=format(Sys.Date(),format="%b%d")
+
+N.fourier=100
+resName=paste(simType,N.fourier,today,sep="_")
+freq <- seq(0,0.5, length.out = N.fourier)
+res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=3,calcCov = T,myW = freq[2])
+res$V.mat$e.values
 saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
 
-resName="simDat1000"
-res=calculateAvars(x.t,t.vec,taus,N.fourier=1000,numTapers=3,calcCov = T)
-saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
-
-resName="simDat2000"
-res=calculateAvars(x.t,t.vec,taus,N.fourier=2000,numTapers=3,calcCov = T)
-saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
-
-
-# change width of analysis band
-# look at tapers and eig vals, how change
+plot(log10(res$freq),log10(res$MTSE_full$spectrum))
 
