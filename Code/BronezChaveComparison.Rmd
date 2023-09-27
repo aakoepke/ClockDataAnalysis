@@ -1,0 +1,128 @@
+---
+title: "Bronez and Chave comparison"
+author: "Amanda Koepke"
+date: "2023-06-28"
+output: 
+  pdf_document: 
+    fig_crop: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(RSpectra) #eigensolving
+library(geigen)
+library(tidyverse)
+library(fields)
+```
+
+## compare gigen and eigs
+
+```{r}
+set.seed(3)
+A = matrix(rnorm(9),nrow=3)
+A[lower.tri(A)] = t(A)[lower.tri(A)]
+
+B=diag(1,nrow=3,ncol=3)
+
+eigs(A,1)
+geigen(A,B,symmetric = T)
+
+```
+
+eigs and geigen sometimes return the same result, but sometimes the sign is reversed for the eigenvectors. Also, geigen reports from smallest to largest, not ordered by absolute magnitude. In past code, we just took the last K. Cait says this is ok, since for our applications the eigenvalues are always positive. 
+
+```{r}
+N <- 2^8
+N.fourier <- floor(N/2) + 1
+freq <- seq(0,0.5, length.out = N.fourier)
+
+input.list=list("t.n"=1:N,
+                       "K"=3,
+                       "f.c"=freq[10],
+                       "f.w"=4/N,
+                       "tn_m"=rdist(1:N))
+t.n=input.list$t.n 
+K=input.list$K
+f.c=input.list$f.c
+f.w=input.list$f.w 
+dist.mat = input.list$tn_m
+
+R.b <- diag(1,nrow = length(t.n),ncol = length(t.n))
+
+j = complex(real = 0, imaginary = 1)
+R.a <- exp(j*2*pi*f.c*dist.mat)*(sin(2*pi*f.w*(dist.mat))/(pi*dist.mat))
+R.a[row(R.a) == col(R.a)] <- f.w*2
+
+res1=eigs(R.a,1)
+res2=geigen(R.a,R.b,symmetric = T)
+res1$values
+res2$values[N]
+
+plot(1:N,res1$vectors[,1])
+# points(1:N,res1$vectors[,2])
+# points(1:N,res1$vectors[,3])
+
+points(1:N,res2$vectors[,(N-1 + 1):N],col="green")
+# points(1:N,res2$vectors[,2],col="green")
+# points(1:N,res2$vectors[,3],col="green")
+
+```
+
+
+These 2 do not match. Looks like eigs answer cannot be trusted due to imaginary components. 
+
+Trusting only geigen for the moment, I reran BronezTapers.R for N=256, and saved the results to BronezResults256_070423.Rds
+
+```{r}
+
+tapers256=readRDS("/home/aak3/NIST/ClockDataAnalysis/Code/BronezResults256_070423.Rds")
+
+
+### check eigenvalues
+plot(tapers256[[1]]$eigenvalues)
+
+for(i in 1:length(freq)){
+  points(tapers256[[i]]$eigenvalues)
+}
+
+taper.mat <- tapers256
+N = length(taper.mat[[1]]$weights[,1])
+N.fourier = floor(N/2) + 1
+freq = seq(0,0.5, length.out = N.fourier)
+set.seed(1990)
+x.t <- rnorm(N,0,6)
+
+spec.hat <- rep(NA, times = N.fourier)
+
+for(i in 1:length(freq)){
+  # print(i)
+  spec.hat[i] <- (1/3)*sum(abs(Conj(t(taper.mat[[i]]$weights))%*%x.t)^2)
+}
+
+# /sqrt(0.01041667)
+
+```
+Cait had been dividing taper.mat[[i]]$weights by /(2*(4/N)/3)), but that doesn't seem to be necessary here?
+
+```{r}
+##compare to Chave estimate
+source("/home/aak3/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
+test_chave <- multitaper_est(X.t = x.t, W = 4/N, K = 3)
+
+plot(freq, test_chave$spectrum, col = "blue")
+points(freq, spec.hat) #/(2*(4/N)/3))
+# abline(h=36) variance of data
+plot(freq, abs(test_chave$spectrum - spec.hat))
+w.k <- tapers256[[1]]$weights[,1]
+# w.k <- w.k*sqrt(0.001)
+t(w.k)%*%w.k
+
+# weights_scaled = list()
+# 
+# for(i in 1:N.fourier){
+#   weights_scaled[[i]] <- tapers256[[i]]$weights/sqrt(0.01041667)
+# }
+lm(spec.hat~freq)
+mean(spec.hat)
+
+```

@@ -154,37 +154,37 @@ startTime=Sys.time()
 # 
 # # #####################look at res
 # # resName="AlSr040318"
-# # resName="SrYb040318"
-# resName="AlYb040318res"
-# 
-# res=readRDS(file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
-# res$V.mat$e.values
-# 
-# plot(log10(res$MTSE_full$freqs),log10(res$MTSE_full$spectrum),type="l")
-# 
-# ### plot avar
-# ggplot(res$avarOut,aes(tau,avar,ymin=avar-var,ymax=avar+var))+
-#   geom_point()+
-#   geom_errorbar()+
-#   ### add true straight line below
-#   geom_abline(slope = -1,intercept = 0,size=1)+
-#   theme(legend.position = c(.15, .2))+
-#   scale_y_log10()+
-#   scale_x_log10()+
-#   annotation_logticks()+
-#   ylab(expression(sigma^2*(tau)))+
-#   xlab(expression(tau))
-# 
-# ggplot(res$allAvarRes,aes(tau,avar,col=calculation))+
-#   geom_point()+
-#   ### add true straight line below
-#   geom_abline(slope = -1,intercept = 0,size=1)+
-#   theme(legend.position = c(.15, .2))+
-#   scale_y_log10()+
-#   scale_x_log10()+
-#   annotation_logticks()+
-#   ylab(expression(sigma^2*(tau)))+
-#   xlab(expression(tau))
+resName="SrYb040318"
+resName="AlYb040318res"
+
+res=readRDS(file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
+res$V.mat$e.values
+
+plot(log10(res$MTSE_full$freqs),log10(res$MTSE_full$spectrum),type="l")
+
+### plot avar
+ggplot(res$avarOut,aes(tau,avar,ymin=avar-var,ymax=avar+var))+
+  geom_point()+
+  geom_errorbar()+
+  ### add true straight line below
+  geom_abline(slope = -1,intercept = 0,size=1)+
+  theme(legend.position = c(.15, .2))+
+  scale_y_log10()+
+  scale_x_log10()+
+  annotation_logticks()+
+  ylab(expression(sigma^2*(tau)))+
+  xlab(expression(tau))
+
+ggplot(res$allAvarRes,aes(tau,avar,col=calculation))+
+  geom_point()+
+  ### add true straight line below
+  # geom_abline(slope = -1,intercept = 0,size=1)+
+  theme(legend.position = c(.15, .2))+
+  scale_y_log10()+
+  scale_x_log10()+
+  annotation_logticks()+
+  ylab(expression(sigma^2*(tau)))+
+  xlab(expression(tau))
 # 
 # 
 # 

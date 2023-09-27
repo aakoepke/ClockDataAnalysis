@@ -4,6 +4,10 @@ library(fields)
 
 setwd("/home/aak3/NIST/ClockDataAnalysis/")  #save this to your file path, or get rid of it if you don't need it
 
+
+####################
+### real clock data
+####################
 source("Code/readTaraData.R")
 
 clock_df <- dat180403$SrYb
@@ -118,41 +122,98 @@ multitaper_est <- function(X.t, W, K){
 
 
 
-clock_MTSE_omitted <- multitaper_est(clock_df_omitted, W = 2, K = 3)
+clock_MTSE_omitted <- multitaper_est(clock_df_omitted, W = .01, K = 3)
 
 
-# saveRDS(clock_MTSE_omitted,file = "clock_MTSE_omitted.Rds") #had to do this so i could run it on tethys and then play with it locally
-# clock_MTSE_omitted=readRDS("clock_MTSE_omitted.Rds")
-
-plot(clock_MTSE_omitted$tapers[,1])
-clock_MTSE_omitted$e.values
-
-f <- seq(0, 0.5, length.out = length(clock_MTSE_omitted$spectrum))
-# f.all <- seq(0, 0.5, length.out = length(clock_MTSE$spectrum))
-
-
-
-plot(log10(f),log10(clock_MTSE_omitted$spectrum))
-# plot(log10(f.all),log10(clock_MTSE$spectrum), type = "l", ylab = "log10(S(f))", xlab = "log10(f)")
-abline(v = -1.4, lwd = 2, col = "red")
-line1.f <- seq(-1.4, log10(0.5), length.out = 100)
-a1 = -1.59
-b1 = -0.811
-lines(line1.f, a1 + b1*line1.f, col = "blue", lwd = 2)
-a2 = -0.04
-b2 = 0.3
-line2.f <- seq(-4.527321, -1.4, length.out = 100)
-lines(line2.f, a2 + b2*line2.f, col = "blue", lwd = 2)
-
-# freqs <- log10(f.all[which(log10(f.all)>-1.4)])
-# spec.hat <- log10(clock_MTSE$spectrum[which(log10(f.all)> -1.4)])
-# lin.fit <- lm(spec.hat ~ freqs)
+saveRDS(clock_MTSE_omitted,file = "clock_MTSE_omitted.Rds") #had to do this so i could run it on tethys and then play with it locally
+# # clock_MTSE_omitted=readRDS("clock_MTSE_omitted.Rds")
 # 
-# freqs1 <- log10(f.all[which(log10(f.all)< -1.4)])[-1]
-# spec.hat1 <- log10(clock_MTSE$spectrum[which(log10(f.all)< -1.4)])[-1]
-# lin.fit1 <- lm(spec.hat1 ~ freqs1)
+# plot(clock_MTSE_omitted$tapers[,1],type="l")
+# clock_MTSE_omitted$e.values
 # 
-# summary(lin.fit1)
-# abline(a = -0.04, b = 0.3, col = "blue")
-# plot(lin.fit)
+# f <- seq(0, 0.5, length.out = length(clock_MTSE_omitted$spectrum))
+# # f.all <- seq(0, 0.5, length.out = length(clock_MTSE$spectrum))
 # 
+# 
+# 
+# plot(log10(f),log10(clock_MTSE_omitted$spectrum))
+# # plot(log10(f.all),log10(clock_MTSE$spectrum), type = "l", ylab = "log10(S(f))", xlab = "log10(f)")
+# abline(v = -1.4, lwd = 2, col = "red")
+# line1.f <- seq(-1.4, log10(0.5), length.out = 100)
+# a1 = -1.59
+# b1 = -0.811
+# lines(line1.f, a1 + b1*line1.f, col = "blue", lwd = 2)
+# a2 = -0.04
+# b2 = 0.3
+# line2.f <- seq(-4.527321, -1.4, length.out = 100)
+# lines(line2.f, a2 + b2*line2.f, col = "blue", lwd = 2)
+# 
+# # freqs <- log10(f.all[which(log10(f.all)>-1.4)])
+# # spec.hat <- log10(clock_MTSE$spectrum[which(log10(f.all)> -1.4)])
+# # lin.fit <- lm(spec.hat ~ freqs)
+# # 
+# # freqs1 <- log10(f.all[which(log10(f.all)< -1.4)])[-1]
+# # spec.hat1 <- log10(clock_MTSE$spectrum[which(log10(f.all)< -1.4)])[-1]
+# # lin.fit1 <- lm(spec.hat1 ~ freqs1)
+# # 
+# # summary(lin.fit1)
+# # abline(a = -0.04, b = 0.3, col = "blue")
+# # plot(lin.fit)
+# # 
+# 
+# 
+# 
+# #################################
+# ###Example 1: White Noise #######
+# #################################
+# 
+# N <- 2048
+# 
+# f <- seq(0,0.5,length.out = N/2 + 1) #grid of frequencies
+# test=(0:(N/2))/N
+# f-test
+# 
+# delta.f <- f[2]
+# 
+# X.t <- rnorm(N,mean = 0, sd = 1)
+#     
+# MTSE_full <- multitaper_est(X.t, W = .05, K = 7)
+# 
+# MTSE_full$e.values
+# 
+# plot(log10(f),log10(MTSE_full$spectrum))
+# fit=lm(log10(MTSE_full$spectrum)[-1]~log10(f)[-1])
+# abline(lm(log10(MTSE_full$spectrum)[-1]~log10(f)[-1]))
+# 
+# #####################################
+# ###Example 3: Flicker Process #######
+# #####################################
+# N <- 2048
+# 
+# X.t <- TK95(N = 2048, alpha = 1)
+# MTSE_full <- multitaper_est(X.t, W = .05, K = 7)
+# MTSE_full$e.values
+# 
+# plot(MTSE_full$spectrum)
+# plot(log10(f),log10(MTSE_full$spectrum))
+# fit=lm(log10(MTSE_full$spectrum)[-1]~log10(f)[-1])
+# abline(lm(log10(MTSE_full$spectrum)[-1]~log10(f)[-1]))
+# 
+# 
+# #####################################
+# ###Example 4: Random Walk ###########
+# #####################################
+# N <- 2048
+# 
+# # X.t <- cumsum(sample(c(-1, 1), N, TRUE))
+# X.t=arima.sim(model = list(order = c(0, 1, 0)),n = N)
+# plot(X.t)
+# MTSE_full <- multitaper_est(X.t, W = .01, K = 7)
+# MTSE_full$e.values
+# plot(MTSE_full$tapers[,1],type="l")
+# 
+# plot(MTSE_full$spectrum)
+# plot(log10(f),log10(MTSE_full$spectrum))
+# fit=lm(log10(MTSE_full$spectrum)[-1]~log10(f)[-1])
+# fit
+# abline(lm(log10(MTSE_full$spectrum)[-1]~log10(f)[-1]))

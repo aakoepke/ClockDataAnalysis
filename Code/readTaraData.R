@@ -22,9 +22,9 @@ ggplot(dat180403long,aes(date,FracDiff,col=Ratio))+
 ggplot(filter(dat180403long,MJD>58211.75),aes(MJD,missing,col=Ratio))+
   geom_point()+geom_jitter()
 ### all missing before 58211.75, and ends after 58212.25
-ggplot(dat180403,aes(MJD,AlYb))+
+ggplot(filter(dat180403,MJD>58211.75),aes(MJD,AlYb))+
   geom_point()
-ggplot(dat180403,aes(MJD,SrYb))+
+ggplot(filter(dat180403,MJD>58211.75),aes(MJD,SrYb))+
   geom_point()
 ggplot(filter(dat180403,MJD>58211.75),aes(MJD,AlSr))+
   geom_point()
