@@ -1,5 +1,6 @@
 rm(list=ls())
 source("/home/aak3/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
+source("Code/SA_ImportantFunctions.R")
 
 numberOfSimulations=100 #used when comparing calculated covariance to observed variance in simulated data
 
