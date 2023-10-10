@@ -231,7 +231,7 @@ AVAR_trfunc <- function(spectral_est, taus){
   
   for(i in 1:length(taus)){
     G.vec <- transfer.func(f, taus[i])
-    G.vec[1] <- 1
+    G.vec[1] <- 0
     out[i] <- f[2]*sum(G.vec*spectral_est)
   }
   
