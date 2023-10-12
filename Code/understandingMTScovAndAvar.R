@@ -2,12 +2,12 @@ rm(list=ls())
 source("/home/aak3/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
 source("Code/SA_ImportantFunctions.R")
 
-numberOfSimulations=100 #used when comparing calculated covariance to observed variance in simulated data
+numberOfSimulations=300 #used when comparing calculated covariance to observed variance in simulated data
 
 ######################################################################
 ### simulate the data
 ######################################################################
-sizeOfData=100
+sizeOfData=1000
 t.vec <- 1:sizeOfData #time vector
 omitted<-c(20:35,50:63, 100:130)
 t.vec[omitted] <- NA #take out values
@@ -185,9 +185,24 @@ ggplot(avarOut,aes(tau,avar,group=(tau)))+
   scale_x_log10()+
   annotation_logticks()+
   ylab(expression(sigma^2*(tau)))+
-  xlab(expression(tau)) 
+  xlab(expression(tau))+
+  geom_point(data = avarSimSum,mapping = aes(tau,mean))+
+  geom_errorbar(data = avarSimSum,mapping = aes(tau,mean,ymin=mean-2*sqrt(var),ymax=mean+2*sqrt(var)))
 ### looks like they follow expected the line well
+ggplot(data = avarSimSum,mapping = aes(tau,mean,ymin=mean-2*sqrt(var),ymax=mean+2*sqrt(var)))+
+  geom_errorbar()+
+  scale_y_log10()+
+  scale_x_log10()+
+  annotation_logticks()+
+  geom_point()
 
+
+ggplot(data = avarSimSum,mapping = aes(tau,mean,ymin=mean-var,ymax=mean+var))+
+  geom_errorbar()+
+  scale_y_log10()+
+  scale_x_log10()+
+  annotation_logticks()+
+  geom_point()
 ################################
 ### calculate avars the old way
 ################################
@@ -201,7 +216,7 @@ for(i in 1:numberOfSimulations){
   
   # avar.calc <- getAvars(N,X.t, taus = taus[-length(taus)])
   avar.calc <- getAvars(N,X.t, taus = taus)
-  temp=data.frame(tau=avar.calc$avarRes$taus,avar=avar.calc$avarRes$avars)
+  temp=data.frame(tau=avar.calc$avarRes$taus,avar=avar.calc$avarRes$overavars)
   
   oldavars=bind_rows(oldavars,temp)
 }
@@ -221,7 +236,7 @@ ggplot(oldavars,aes(tau,avar,group=(tau)))+
 
 ### plot them both to see how they compare
 
-oldavars$method="old"
+oldavars$method="overlapping"
 avarOut$method="spectrum"
 
 allRes=bind_rows(oldavars,avarOut)
@@ -234,6 +249,7 @@ ggplot(allRes,aes(tau,avar,col=method,group=interaction(tau,method)))+
   annotation_logticks()+
   ylab(expression(sigma^2*(tau)))+
   xlab(expression(tau)) 
+
 
 ### results look similar, spectral looks tighter especially for higher tau
 

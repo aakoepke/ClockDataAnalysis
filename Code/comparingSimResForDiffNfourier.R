@@ -1,3 +1,117 @@
+##################### Dave sim data (reduced to 5000)
+
+resName="Data/resultsForDaveSim_200_Oct08.Rds"
+res1=readRDS(file = paste("/home/aak3/NIST/ClockDataAnalysis/",resName,sep=""))
+res1$V.mat$e.values
+
+resName="Data/resultsForDaveSim_500_Oct08.Rds"
+res2=readRDS(file = paste("/home/aak3/NIST/ClockDataAnalysis/",resName,sep=""))
+res2$V.mat$e.values
+
+resName="Data/resultsForDaveSim_700_Oct08.Rds"
+res3=readRDS(file = paste("/home/aak3/NIST/ClockDataAnalysis/",resName,sep=""))
+res3$V.mat$e.values
+
+resName="Data/resultsForDaveSim_1536_Oct08.Rds"
+res4=readRDS(file = paste("/home/aak3/NIST/ClockDataAnalysis/",resName,sep=""))
+res4$V.mat$e.values
+
+dat1=data.frame(ratio="AlYb",
+                n.fourier=length(res1$MTSE_full$freqs),
+                W=res1$W,
+                freq=res1$MTSE_full$freqs,
+                spectrum=res1$MTSE_full$spectrum)
+dat2=data.frame(ratio="AlYb",
+                n.fourier=length(res2$MTSE_full$freqs),
+                W=res2$W,
+                freq=res2$MTSE_full$freqs,
+                spectrum=res2$MTSE_full$spectrum)
+dat3=data.frame(ratio="AlYb",
+                n.fourier=length(res3$MTSE_full$freqs),
+                W=res3$W,
+                freq=res3$MTSE_full$freqs,
+                spectrum=res3$MTSE_full$spectrum)
+dat4=data.frame(ratio="AlYb",
+                n.fourier=length(res4$MTSE_full$freqs),
+                W=res4$W,
+                freq=res4$MTSE_full$freqs,
+                spectrum=res4$MTSE_full$spectrum)
+
+allSpec=bind_rows(dat1,dat2,dat3,dat4)
+
+ggplot(allSpec,aes(freq,spectrum,col=factor(interaction(n.fourier,W))))+
+  # geom_line()+
+  scale_y_log10()+
+  scale_x_log10()+
+  geom_smooth()
+ggplot(allSpec,aes(freq,spectrum))+
+  geom_line()+
+  facet_wrap(~n.fourier+W)+
+  geom_smooth()+
+  scale_y_log10()+
+  scale_x_log10()
+
+dat1=data.frame(ratio="AlYb",
+                n.fourier=length(res1$MTSE_full$freqs),
+                W=res1$W,
+                tau=res1$avarOut$tau,
+                avar=res1$avarOut$avar,
+                var=res1$avarOut$var)
+dat2=data.frame(ratio="AlYb",
+                n.fourier=length(res2$MTSE_full$freqs),
+                W=res2$W,
+                tau=res2$avarOut$tau,
+                avar=res2$avarOut$avar,
+                var=res2$avarOut$var)
+dat3=data.frame(ratio="AlYb",
+                n.fourier=length(res3$MTSE_full$freqs),
+                W=res3$W,
+                tau=res3$avarOut$tau,
+                avar=res3$avarOut$avar,
+                var=res3$avarOut$var)
+dat4=data.frame(ratio="AlYb",
+                n.fourier=length(res4$MTSE_full$freqs),
+                W=res4$W,
+                tau=res4$avarOut$tau,
+                avar=res4$avarOut$avar,
+                var=res4$avarOut$var)
+
+allavar=bind_rows(dat1,dat2,dat3,dat4)
+allavar$calculation="spectral"
+
+
+
+### plot avar
+ggplot(allavar,aes(tau,avar,ymin=avar-2*sqrt(var),ymax=avar+2*sqrt(var),col=factor(n.fourier)))+
+  geom_point()+
+  geom_errorbar()+
+  ### add true straight line below
+  # geom_abline(slope = -1,intercept = 0,size=1)+
+  theme(legend.position = c(.15, .2))+
+  scale_y_log10()+
+  scale_x_log10()+
+  annotation_logticks()+
+  ylab(expression(sigma^2*(tau)))+
+  xlab(expression(tau))
+
+ggplot(allavar,aes(tau,avar,ymin=avar-2*sqrt(var),ymax=avar+2*sqrt(var),col=factor(interaction(n.fourier,W))))+
+  geom_point()+
+  geom_errorbar()+
+  ylab(expression(sigma^2*(tau)))+
+  xlab(expression(tau))+
+  facet_wrap(~tau,scales = "free")
+
+ggplot(res4$allAvarRes,aes(tau,avar,color=calculation))+
+  geom_point()+
+  scale_y_log10()+
+  scale_x_log10()+
+  annotation_logticks()+
+  geom_errorbar(data = filter(allavar,n.fourier==1536),mapping = aes(tau,avar,ymin=avar-2*sqrt(var),ymax=avar+2*sqrt(var)))
+
+ggplot(res3$allAvarRes,aes(tau,avar,color=calculation))+
+  geom_point()
+
+###############white noise example
 
 resName="simDat_200_Sep22"
 res200=readRDS(file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
@@ -116,7 +230,7 @@ allavar=bind_rows(dat1,dat2,dat3,dat4,dat5)
 
 
 ### plot avar
-ggplot(allavar,aes(tau,avar,ymin=avar-var,ymax=avar+var,col=factor(n.fourier)))+
+ggplot(allavar,aes(tau,avar,ymin=avar-2*sqrt(var),ymax=avar+2*sqrt(var),col=factor(n.fourier)))+
   geom_point()+
   geom_errorbar()+
   ### add true straight line below
@@ -128,7 +242,7 @@ ggplot(allavar,aes(tau,avar,ymin=avar-var,ymax=avar+var,col=factor(n.fourier)))+
   ylab(expression(sigma^2*(tau)))+
   xlab(expression(tau))
 
-ggplot(allavar,aes(tau,avar,ymin=avar-var,ymax=avar+var,col=factor(interaction(n.fourier,W))))+
+ggplot(allavar,aes(tau,avar,ymin=avar-2*sqrt(var),ymax=avar+2*sqrt(var),col=factor(interaction(n.fourier,W))))+
   geom_point()+
   geom_errorbar()+
   ylab(expression(sigma^2*(tau)))+
@@ -137,6 +251,11 @@ ggplot(allavar,aes(tau,avar,ymin=avar-var,ymax=avar+var,col=factor(interaction(n
 
 
 
+ggplot(res2000$allAvarRes,aes(tau,avar,color=calculation))+
+  geom_point()+
+  scale_y_log10()+
+  scale_x_log10()+
+  annotation_logticks()
 
 
 
