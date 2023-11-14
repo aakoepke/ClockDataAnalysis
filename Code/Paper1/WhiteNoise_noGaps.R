@@ -1,5 +1,5 @@
 # source("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
- source("/Users/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
+# source("/Users/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
  source("SA_ImportantFunctions.R")
 #test
 ##############################################
@@ -7,7 +7,7 @@
 ### read in the file with functions
 
 # setwd("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/")
- setwd("/home/cmb15/ClockDataAnalysis/Code/Paper1/")
+# setwd("/home/cmb15/ClockDataAnalysis/Code/Paper1/")
 
 # source("../SA_ImportantFunctions.R")
 ##############################################
@@ -49,9 +49,9 @@ runDate=format(Sys.Date(),"%m%d%y")
 # setK = 4
 
 ###run6
-setWnum = 4
+setWnum = 5
 setW = setWnum/N
-setK = 3
+setK = 8
 
 print(setWnum)
 print(setK)
