@@ -71,7 +71,7 @@ delta.f <- f[2]
 
 ##calculate tapers
 t.n <- 1:N
-V.mat <- get_tapers(t.n, W = setW/N, K = setK)
+V.mat <- get_tapers(t.n, W = setW, K = setK)
 
 
 r = 0
