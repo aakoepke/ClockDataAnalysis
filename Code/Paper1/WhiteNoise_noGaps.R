@@ -1,7 +1,9 @@
 # source("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
 # source("/home/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
- source("/home/cmb15/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
-#test
+#source("C:/Users/cmb15/OneDrive - UCB-O365/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
+source("/home/cmb15/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
+ 
+ #test
 ##############################################
 ##############################################
 ### read in the file with functions
@@ -9,7 +11,7 @@
 # setwd("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/")
 # setwd("/home/cmb15/ClockDataAnalysis/Code/Paper1/")
 
-# source("../SA_ImportantFunctions.R")
+ #source("../SA_ImportantFunctions.R")
 ##############################################
 ##############################################
 
@@ -69,7 +71,7 @@ delta.f <- f[2]
 
 ##calculate tapers
 t.n <- 1:N
-V.mat <- get_tapers(t.n, W = setW, K = setK)
+V.mat <- get_tapers(t.n, W = setW/N, K = setK)
 
 
 r = 0
@@ -78,14 +80,14 @@ for(k in taus){
   tau = k
   print(paste("r = ", r))
   
-  for(i in 1:numberOfSimulations){
+for(i in 1:numberOfSimulations){
     print(i)
     set.seed(i)
     #generate X.t
     X.t <- rnorm(N,mean = 0, sd = 1)
     
     #calculate S.hat
-    MTSE_full <- MT_spectralEstimate(X.t, V.mat)
+    MTSE_full <- MT_spectralEstimate(X.t, V.mat$tapers)
     
     #calculate bandpass variance
     temp_bp <- integrate(approxfun(f, MTSE_full$spectrum), lower = 1/(4*tau), upper = 1/(2*tau), subdivisions = 1000)
@@ -93,7 +95,7 @@ for(k in taus){
     
     #calculate transfer function AVAR
     G.vec <- transfer.func(f, tau)
-    G.vec[1] <- 1
+    G.vec[1] <- 0
     trfunc.vec[i] <- f[2]*sum(G.vec*MTSE_full$spectrum)
     
   }
