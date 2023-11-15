@@ -125,10 +125,10 @@ print(startTime-Sys.time())
 
 
 # likely need to save tmat and bmat to work with outside of the titans
-saveRDS(tmat,paste("Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
-saveRDS(bmat,paste("Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
-saveRDS(amat,paste("Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
-saveRDS(oamat,paste("Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+saveRDS(tmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+saveRDS(bmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+saveRDS(amat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+saveRDS(oamat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
 
 
 
