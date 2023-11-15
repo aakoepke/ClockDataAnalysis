@@ -2,7 +2,7 @@
 # source("/home/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
 #source("C:/Users/cmb15/OneDrive - UCB-O365/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
 source("/home/cmb15/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
-
+library(lomb)
 #test
 ##############################################
 ##############################################
