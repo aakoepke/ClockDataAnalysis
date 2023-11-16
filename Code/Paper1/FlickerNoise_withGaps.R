@@ -1,10 +1,27 @@
+# source("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
+# source("/home/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_withGaps.R")
+#source("C:/Users/cmb15/OneDrive - UCB-O365/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
+#source("/home/cmb15/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
+
+##############################################
+##############################################
 ### read in the file with functions
-# source("") 
+
+# setwd("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/")
+# setwd("/home/cmb15/ClockDataAnalysis/Code/Paper1/")
+
+#source("../SA_ImportantFunctions.R")
+##############################################
+##############################################
 
 
 
-numberOfSimulations = 300
-N <- 2048
+numberOfSimulations = 500
+N.long = 2048 + 1000
+t.n_missing <- 1:N.long
+t.n_missing[c(100:500,1300:1400, 1700:1874, 2400:2722)] <- NA
+N <- length(na.omit(t.n_missing))
+
 ## keeping track of how long this all takes
 startTime=Sys.time()
 
@@ -38,136 +55,105 @@ runDate=format(Sys.Date(),"%m%d%y")
 # setK = 4
 
 ###run6
-setWnum = 4
+setWnum = 7
 setW = setWnum/N
-setK = 6
+setK = 8
 
 print(setWnum)
 print(setK)
 
-######################################
-###### Study 2: Flicker Noise ########
-######      with  gaps     ###########
-######################################
+############################################
+######### Study 2: Arfima(0,0.25,0) ########
+#########      with  gaps     ##############
+############################################
 
-trfunc.vec <- bpvar.vec <- rep(NA, times = numberOfSimulations)
-
-tmat_flk_gps <- bmat_flk_gps <- matrix(NA, ncol = numberOfSimulations, nrow = 11)
+trfunc.vec <- bpvar.vec <- bpvar.vec_LS <- rep(NA, times = numberOfSimulations)
+taus <- c(2^(0:9), floor(N/3))
+tmat <- bmat <- lmat_bp <- lmat_tr <- matrix(NA, ncol = numberOfSimulations, nrow = length(taus))
 
 f <- seq(0,0.5,length.out = N/2 + 1) #grid of frequencies
 delta.f <- f[2]
 
-X.t_sims_flk_gps <- matrix(NA, nrow = numberOfSimulations, ncol = (4096 + 1128)) #add in extras for the NAs we will be creating
+##calculate tapers
+V.mat <- get_tapers(t.n_missing, W = setW, K = setK)
+V.mat$e.values
+
+X.t_sims_flk_gps <- matrix(NA, nrow = numberOfSimulations, ncol = N.long) #add in extras for the NAs we will be creating
+
 g = 0
 for(k in c(2^(0:9), floor(N/3))){
   g = g + 1
   tau = k
   print(paste("flk g = ", g))
   
-  for(i in 1:300){
+  for(i in 1:numberOfSimulations){
     print(i)
     set.seed(i)
+    
     #generate X.t
-    X.t <- TK95(N = 5224, alpha = 1)
-    X.t[c(100:500,1300:1400, 1700:1874, 3000:3450)] <- NA
+    X.t <- arfima.sim(N.long, model = list(dfrac = 0.25))
+    X.t[c(100:500,1300:1400, 1700:1874, 2400:2722)] <- NA
     X.t_sims_flk_gps[i,] <- X.t
     
     #calculate S.hat
-    MTSE_full <- multitaper_est(X.t, W = 0.005, K = 5)
+    MTSE_full <- MT_spectralEstimate(X.t_missing, V.mat$tapers)
+    lsperio <- lomb_scargle(X.t_missing, f[-1])
     
     #calculate bandpass variance
-    
-    if(sum(f-1/(4*tau) == 0) & sum(f-1/(2*tau) == 0)){
-      f.min.index <- which(f == 1/(4*tau))
-      f.max.index <- which(f == 1/(2*tau))
-      bpvar.vec[i] <- 4*delta.f*(sum(MTSE_full$spectrum[f.min.index:(f.max.index - 1)]))
-    }
-    else{
-      f.min.index <- min(which(f>1/(4*tau) & f<1/(2*tau)))
-      f.max.index <- max(which(f>1/(4*tau) & f<1/(2*tau)))
-      if(f.min.index == f.max.index){
-        bpvar.vec[i] <- 4*(MTSE_full$spectrum[f.min.index-1]*(f[f.min.index] - 1/(4*tau)) + MTSE_full$spectrum[f.min.index]*(1/(2*tau) - f[f.min.index]))
-      }else{
-        bpvar.vec[i] <- 4*delta.f*(sum(MTSE_full$spectrum[f.min.index:f.max.index]) + (f[f.min.index] - 1/(4*tau)) + (1/(2*tau) - f[f.max.index]) )
-      }
-    }
+    temp_bp <- integrate(approxfun(f, MTSE_full$spectrum), lower = 1/(4*tau), upper = 1/(2*tau), subdivisions = 1000)
+    temp_bp_LS <- integrate(approxfun(f[-1], lsperio), lower = 1/(4*tau), upper = 1/(2*tau), subdivisions = 1000)
+    bpvar.vec[i] <- 4*temp_bp$value
+    bpvar.vec_LS[i] <- 4*temp_bp_LS$value
     
     #calculate transfer function AVAR
     G.vec <- transfer.func(f, tau)
-    G.vec[1] <- 1
+    G.vec[1] <- 0
     trfunc.vec[i] <- f[2]*sum(G.vec*MTSE_full$spectrum)
+    trfunc.vec_LS[i] <- f[2]*sum(G.vec[-1]*lsperio)
     
   }
-  tmat_flk_gps[g,] <- trfunc.vec
-  bmat_flk_gps[g,] <- bpvar.vec
+  tmat[g,] <- trfunc.vec
+  bmat[g,] <- bpvar.vec
+  lmat_bp[g,] <- bpvar.vec_LS
+  lmat_tr[g,] <- trfunc.vec_LS
 }
 
 
-##AVAR calculation
 
-amat_flk_gps <- oamat_flk_gps <- matrix(NA, nrow = 300, ncol = 11)
+###also Calculate AVAR###
 
-for(i in 1:300){
-  #get X.t from simulation matrix
-  X.t <- na.omit(X.t_sims_flk_gps[i,])
-  
-  avar.calc <- getAvars(N,X.t, taus = c(2^(0:9), floor(N/3)))
-  amat_flk_gps[i,] <- avar.calc$avarRes$avars
-  oamat_flk_gps[i,] <- avar.calc$avarRes$overavars
-}
+amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = length(taus))
 
-
-##tidy the data
-tmat_flk_gps %<>% t()
-bmat_flk_gps %<>% t()
-dim(bmat_flk_gps)
-three.mat <- rbind(oamat_flk_gps, tmat_flk_gps,bmat_flk_gps)
-method_labels <- rep(c("avar", "tr", "bp"), each = 300)
-df.messy <- as.data.frame(cbind(method_labels, three.mat))
-colnames(df.messy) <-c("method", taus)
-
-
-dat <- df.messy %>% gather(tau, measurement, -method)
-
-dat$measurement <- as.numeric(dat$measurement)
-dat$tau <- as.numeric(dat$tau)
-
-sumDat=dat %>% group_by(method,tau) %>%
-  summarise(median = median(log10(measurement)),
-            lower25=quantile(log10(measurement),prob=.25),
-            upper75=quantile(log10(measurement),prob=.75),
-            min=min(log10(measurement)),
-            max=max(log10(measurement)))
-
-ggplot(data = sumDat,aes(x=log10(tau),y=median,col=method,fill=method))+
-  ### width controls how wide these are, can change all below if they are too wide to see tau linear relationship well with real data
-  geom_errorbar(aes(ymin=min,ymax=max),width=.1,position = "dodge")+
-  geom_crossbar(aes(ymin=lower25,ymax=upper75),width=.1,position = "dodge")+
-  geom_crossbar(aes(ymin=lower25,ymax=upper75),color="black",width=.1,position = "dodge")+
-  ####
-  ylab(expression(log[10](sigma(tau))))+
-  xlab(expression(log[10](tau)))+
-  ggtitle("Flicker Noise, Gaps")+
-  ### add true line below
-  geom_abline(slope = 0,intercept = 3.1,size=1)
-
-
-
-
-MTSE_saved <- list()
-
-for(i in 1:300){
-  print(i)
+for(i in 1:numberOfSimulations){
   set.seed(i)
+  print(i)
   #generate X.t
-  X.t <- TK95(N = 5224, alpha = 1)
-  X.t[c(100:500,1300:1400, 1700:1874, 3000:3450)] <- NA
-  X.t_sims_flk_gps[i,] <- X.t
-  
-  #calculate S.hat
-  MTSE_full <- multitaper_est(X.t, W = 0.009, K = 5)
-  
-  MTSE_saved[[i]] <- MTSE_full
+  X.t_missing <- X.t_sims_flk_gps[i,]
+
+  avar.calc <- getAvars(N,na.omit(X.t_missing), taus = taus)
+  amat[i,] <- avar.calc$avarRes$avars
+  oamat[i,] <- avar.calc$avarRes$overavars
 }
+
+
+### print time to run this first part
+print(startTime-Sys.time())
+
+
+# likely need to save tmat and bmat to work with outside of the titans
+saveRDS(tmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
+saveRDS(bmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
+saveRDS(lmat_bp,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/lmat_bp",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
+saveRDS(lmat_tr,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/lmat_tr",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
+saveRDS(amat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
+saveRDS(oamat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
+
+
+
+
+
+
+
+
 
 
