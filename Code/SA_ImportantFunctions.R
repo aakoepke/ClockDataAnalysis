@@ -372,7 +372,7 @@ lomb_scargle <- function(x.t,f){
     tau.value <- tau.shift(f[i], t.missing)
     c.vec <- cos(2*pi*(f[i]*(t.missing - tau.value)))
     s.vec <- sin(2*pi*(f[i]*(t.missing - tau.value)))
-    lsperio[i] <- (1/(2*g.var))*((x.centered%*%c.vec)^2/sum(c.vec^2) + 
+    lsperio[i] <- (1/(2*x.var))*((x.centered%*%c.vec)^2/sum(c.vec^2) + 
                                    (x.centered%*%s.vec)^2/sum(s.vec^2))
   }
   
