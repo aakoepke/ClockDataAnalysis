@@ -1,7 +1,7 @@
 # source("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
-# source("/home/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
+# source("/home/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_withGaps.R")
 #source("C:/Users/cmb15/OneDrive - UCB-O365/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
-source("/home/cmb15/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
+#source("/home/cmb15/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
 
 ##############################################
 ##############################################
@@ -82,7 +82,6 @@ for(k in taus){
   print(paste("r = ", r))
   
   for(i in 1:numberOfSimulations){
-    i = 1
     print(i)
     set.seed(i)
     #generate X.t
