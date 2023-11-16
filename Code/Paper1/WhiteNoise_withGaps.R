@@ -2,8 +2,7 @@
 # source("/home/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
 #source("C:/Users/cmb15/OneDrive - UCB-O365/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
 source("/home/cmb15/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
-library(lomb)
-#test
+
 ##############################################
 ##############################################
 ### read in the file with functions
@@ -54,7 +53,7 @@ runDate=format(Sys.Date(),"%m%d%y")
 # setK = 4
 
 ###run6
-setWnum = 5
+setWnum = 7
 setW = setWnum/N
 setK = 8
 
@@ -74,6 +73,7 @@ delta.f <- f[2]
 
 ##calculate tapers
 V.mat <- get_tapers(t.n_missing, W = setW, K = setK)
+V.mat$e.values
 
 r = 0
 for(k in taus){
@@ -82,6 +82,7 @@ for(k in taus){
   print(paste("r = ", r))
   
   for(i in 1:numberOfSimulations){
+    i = 1
     print(i)
     set.seed(i)
     #generate X.t
@@ -89,7 +90,7 @@ for(k in taus){
     X.t_missing[c(100:500, 1300:1400, 1700:1874, 2400:2722)] <- NA
     #calculate S.hat
     MTSE_full <- MT_spectralEstimate(X.t_missing, V.mat$tapers)
-    lsperio <- lsp(x = X.t_missing, times = t.n_missing, plot = FALSE)
+    lsperio <- lomb_scargle(X.t_missing, f[-1])
     
     #calculate bandpass variance
     temp_bp <- integrate(approxfun(f, MTSE_full$spectrum), lower = 1/(4*tau), upper = 1/(2*tau), subdivisions = 1000)
@@ -99,7 +100,7 @@ for(k in taus){
     G.vec <- transfer.func(f, tau)
     G.vec[1] <- 0
     trfunc.vec[i] <- f[2]*sum(G.vec*MTSE_full$spectrum)
-    trfunc.vec_LS[i] <- f[2]*sum(G.vec[-1]*lsperio$power)
+    trfunc.vec_LS[i] <- f[2]*sum(G.vec[-1]*lsperio)
     
   }
   tmat[r,] <- trfunc.vec
@@ -119,7 +120,7 @@ for(i in 1:numberOfSimulations){
   X.t_missing <- rnorm(N.long,mean = 0, sd = 1)
   X.t_missing[c(100:500, 1300:1400, 1700:1874, 2400:2722)] <- NA
   
-  avar.calc <- getAvars(N,na.omit(X.t), taus = taus)
+  avar.calc <- getAvars(N,na.omit(X.t_missing), taus = taus)
   amat[i,] <- avar.calc$avarRes$avars
   oamat[i,] <- avar.calc$avarRes$overavars
 }
