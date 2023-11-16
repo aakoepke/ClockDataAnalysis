@@ -111,19 +111,19 @@ for(k in taus){
 
 ###also Calculate AVAR###
 
-amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = length(taus))
-
-for(i in 1:numberOfSimulations){
-  set.seed(i)
-  print(i)
-  #generate X.t
-  X.t_missing <- rnorm(N.long,mean = 0, sd = 1)
-  X.t_missing[c(100:500, 1300:1400, 1700:1874, 2400:2722)] <- NA
-  
-  avar.calc <- getAvars(N,na.omit(X.t_missing), taus = taus)
-  amat[i,] <- avar.calc$avarRes$avars
-  oamat[i,] <- avar.calc$avarRes$overavars
-}
+# amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = length(taus))
+# 
+# for(i in 1:numberOfSimulations){
+#   set.seed(i)
+#   print(i)
+#   #generate X.t
+#   X.t_missing <- rnorm(N.long,mean = 0, sd = 1)
+#   X.t_missing[c(100:500, 1300:1400, 1700:1874, 2400:2722)] <- NA
+#   
+#   avar.calc <- getAvars(N,na.omit(X.t_missing), taus = taus)
+#   amat[i,] <- avar.calc$avarRes$avars
+#   oamat[i,] <- avar.calc$avarRes$overavars
+# }
 
 
 ### print time to run this first part
@@ -134,8 +134,8 @@ print(startTime-Sys.time())
 saveRDS(tmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
 saveRDS(bmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
 saveRDS(lmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/lmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
-saveRDS(amat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
-saveRDS(oamat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
+# saveRDS(amat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
+# saveRDS(oamat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
 
 
 
