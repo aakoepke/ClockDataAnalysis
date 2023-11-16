@@ -345,3 +345,41 @@ tavar_ARFIMA <- function(N.tau,d, sig.2.a){
   return(numerator/denom)
 }
 
+
+##calculates the lomb-scargle periodogram for data x.t at frequencies f
+#inputs: x.t - data (possibly with NA values)
+#        f - frequencies at which we calculate the lomb-scargle periodogram
+#output: spectral estimate
+
+#lomb-scargle function
+
+lomb_scargle <- function(x.t,f){
+  
+  ## calculates the Lomb-Scargle Periodogram for data x.t at frequencies f##
+  
+  N <- length(x.t)
+  L <- length(f)
+  t.vec <- 1:N
+  t.vec[which(is.na(x.t))] <- NA
+  x.missing <- na.omit(x.t)
+  t.missing <- na.omit(t.vec)
+  
+  lsperio <- rep(NA, times = L)
+  
+  for(i in 1:L){
+    x.centered <- x.missing - mean(x.missing)
+    x.var <- var(x.missing)
+    tau.value <- tau.shift(f[i], t.missing)
+    c.vec <- cos(2*pi*(f[i]*(t.missing - tau.value)))
+    s.vec <- sin(2*pi*(f[i]*(t.missing - tau.value)))
+    lsperio[i] <- (1/(2*g.var))*((x.centered%*%c.vec)^2/sum(c.vec^2) + 
+                                   (x.centered%*%s.vec)^2/sum(s.vec^2))
+  }
+  
+  return(lsperio)
+}
+
+#tau function
+tau.shift <- function(f,t){
+  (1/(4*pi*f))*atan(sum(sin(4*pi*f*t))/sum(cos(4*pi*f*t)))
+}
