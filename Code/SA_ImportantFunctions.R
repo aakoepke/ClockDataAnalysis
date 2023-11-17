@@ -356,13 +356,13 @@ tavar_ARFIMA <- function(N.tau,d, sig.2.a){
 lomb_scargle <- function(x.t,f){
   
   ## calculates the Lomb-Scargle Periodogram for data x.t at frequencies f##
-  
+
   N <- length(x.t)
   L <- length(f)
   t.vec <- 1:N
   t.vec[which(is.na(x.t))] <- NA
-  x.missing <- na.omit(x.t)
-  t.missing <- na.omit(t.vec)
+  x.missing <- na.exclude(x.t)
+  t.missing <- na.exclude(t.vec)
   
   lsperio <- rep(NA, times = L)
   

@@ -1,5 +1,5 @@
-# source("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
-# source("/home/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_withGaps.R")
+# source("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/FlickerNoise_noGaps.R")
+# source("/home/cmb15/ClockDataAnalysis/Code/Paper1/FlickerNoise_withGaps.R")
 #source("C:/Users/cmb15/OneDrive - UCB-O365/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
 #source("/home/cmb15/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
 
@@ -91,9 +91,9 @@ for(k in c(2^(0:9), floor(N/3))){
     set.seed(i)
     
     #generate X.t
-    X.t <- arfima.sim(N.long, model = list(dfrac = 0.25))
-    X.t[c(100:500,1300:1400, 1700:1874, 2400:2722)] <- NA
-    X.t_sims_flk_gps[i,] <- X.t
+    X.t_missing <- arfima.sim(N.long, model = list(dfrac = 0.25))
+    X.t_missing[c(100:500,1300:1400, 1700:1874, 2400:2722)] <- NA
+    X.t_sims_flk_gps[i,] <- X.t_missing
     
     #calculate S.hat
     MTSE_full <- MT_spectralEstimate(X.t_missing, V.mat$tapers)
@@ -130,7 +130,7 @@ for(i in 1:numberOfSimulations){
   #generate X.t
   X.t_missing <- X.t_sims_flk_gps[i,]
 
-  avar.calc <- getAvars(N,na.omit(X.t_missing), taus = taus)
+  avar.calc <- getAvars(N,na.exclude(X.t_missing), taus = taus)
   amat[i,] <- avar.calc$avarRes$avars
   oamat[i,] <- avar.calc$avarRes$overavars
 }
@@ -141,12 +141,12 @@ print(startTime-Sys.time())
 
 
 # likely need to save tmat and bmat to work with outside of the titans
-saveRDS(tmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
-saveRDS(bmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
-saveRDS(lmat_bp,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/lmat_bp",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
-saveRDS(lmat_tr,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/lmat_tr",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
-saveRDS(amat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
-saveRDS(oamat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
+saveRDS(tmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseGaps.Rds",sep=""))
+saveRDS(bmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseGaps.Rds",sep=""))
+saveRDS(lmat_bp,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/lmat_bp",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseGaps.Rds",sep=""))
+saveRDS(lmat_tr,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/lmat_tr",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseGaps.Rds",sep=""))
+saveRDS(amat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseGaps.Rds",sep=""))
+saveRDS(oamat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseGaps.Rds",sep=""))
 
 
 
