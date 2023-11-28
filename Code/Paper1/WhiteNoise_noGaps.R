@@ -1,15 +1,17 @@
 # source("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
- source("/Users/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
- source("SA_ImportantFunctions.R")
-#test
+# source("/home/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
+#source("C:/Users/cmb15/OneDrive - UCB-O365/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
+source("/home/cmb15/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
+ 
+ #test
 ##############################################
 ##############################################
 ### read in the file with functions
 
 # setwd("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/")
- setwd("/home/cmb15/ClockDataAnalysis/Code/Paper1/")
+# setwd("/home/cmb15/ClockDataAnalysis/Code/Paper1/")
 
-# source("../SA_ImportantFunctions.R")
+ #source("../SA_ImportantFunctions.R")
 ##############################################
 ##############################################
 
@@ -49,9 +51,9 @@ runDate=format(Sys.Date(),"%m%d%y")
 # setK = 4
 
 ###run6
-setWnum = 4
+setWnum = 5
 setW = setWnum/N
-setK = 3
+setK = 8
 
 print(setWnum)
 print(setK)
@@ -78,14 +80,14 @@ for(k in taus){
   tau = k
   print(paste("r = ", r))
   
-  for(i in 1:numberOfSimulations){
+for(i in 1:numberOfSimulations){
     print(i)
     set.seed(i)
     #generate X.t
     X.t <- rnorm(N,mean = 0, sd = 1)
     
     #calculate S.hat
-    MTSE_full <- MT_spectralEstimate(X.t, V.mat)
+    MTSE_full <- MT_spectralEstimate(X.t, V.mat$tapers)
     
     #calculate bandpass variance
     temp_bp <- integrate(approxfun(f, MTSE_full$spectrum), lower = 1/(4*tau), upper = 1/(2*tau), subdivisions = 1000)
@@ -93,7 +95,7 @@ for(k in taus){
     
     #calculate transfer function AVAR
     G.vec <- transfer.func(f, tau)
-    G.vec[1] <- 1
+    G.vec[1] <- 0
     trfunc.vec[i] <- f[2]*sum(G.vec*MTSE_full$spectrum)
     
   }
@@ -123,10 +125,10 @@ print(startTime-Sys.time())
 
 
 # likely need to save tmat and bmat to work with outside of the titans
-saveRDS(tmat,paste("Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
-saveRDS(bmat,paste("Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
-saveRDS(amat,paste("Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
-saveRDS(oamat,paste("Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+saveRDS(tmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+saveRDS(bmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+saveRDS(amat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+saveRDS(oamat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
 
 
 

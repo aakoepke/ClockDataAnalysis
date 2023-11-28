@@ -1,19 +1,24 @@
 # source("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/WhiteNoise_noGaps.R")
-source("/Users/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_withGaps.R")
-source("SA_ImportantFunctions.R")
-#test
+# source("/home/cmb15/ClockDataAnalysis/Code/Paper1/WhiteNoise_withGaps.R")
+#source("C:/Users/cmb15/OneDrive - UCB-O365/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
+#source("/home/cmb15/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
+
 ##############################################
 ##############################################
 ### read in the file with functions
 
 # setwd("/home/aak3/NIST/ClockDataAnalysis/Code/Paper1/")
-setwd("/home/cmb15/ClockDataAnalysis/Code/Paper1/")
+# setwd("/home/cmb15/ClockDataAnalysis/Code/Paper1/")
 
-# source("../SA_ImportantFunctions.R")
+#source("../SA_ImportantFunctions.R")
 ##############################################
 ##############################################
 
-numberOfSimulations = 300
+numberOfSimulations = 500
+N.long = 2048 + 1000
+t.n_missing <- 1:N.long
+t.n_missing[c(100:500,1300:1400, 1700:1874, 2400:2722)] <- NA
+N <- length(na.omit(t.n_missing))
 
 ## keeping track of how long this all takes
 startTime=Sys.time()
@@ -48,28 +53,30 @@ runDate=format(Sys.Date(),"%m%d%y")
 # setK = 4
 
 ###run6
-setWnum = 4
-setW = setWnum/2048
-setK = 6
+setWnum = 7
+setW = setWnum/N
+setK = 8
 
 print(setWnum)
 print(setK)
-########################################
-###### Study 1b: White Noise ###########
-######   WN(0,1), with gaps    #########
-########################################
+######################################
+###### Study 2: White Noise ##########
+######   WN(0,1), gaps    #########
+######################################
 
-N = 2048 
-trfunc.vec <- bpvar.vec <- rep(NA, times = numberOfSimulations)
-
-tmat <- bmat <- matrix(NA, ncol = numberOfSimulations, nrow = 11)
+trfunc.vec <- bpvar.vec <- trfunc.vec_LS <- rep(NA, times = numberOfSimulations)
+taus <- c(2^(0:9), floor(N/3))
+tmat <- bmat <- lmat <- matrix(NA, ncol = numberOfSimulations, nrow = length(taus))
 
 f <- seq(0,0.5,length.out = N/2 + 1) #grid of frequencies
 delta.f <- f[2]
 
+##calculate tapers
+V.mat <- get_tapers(t.n_missing, W = setW, K = setK)
+V.mat$e.values
 
 r = 0
-for(k in c(2^(0:9), floor(N/3))){
+for(k in taus){
   r = r + 1
   tau = k
   print(paste("r = ", r))
@@ -78,54 +85,44 @@ for(k in c(2^(0:9), floor(N/3))){
     print(i)
     set.seed(i)
     #generate X.t
-    X.t <- rnorm(N,mean = 0, sd = 1)
-    
+    X.t_missing <- rnorm(N.long,mean = 0, sd = 1)
+    X.t_missing[c(100:500, 1300:1400, 1700:1874, 2400:2722)] <- NA
     #calculate S.hat
-    MTSE_full <- multitaper_est(X.t, W = setW, K = setK)
+    MTSE_full <- MT_spectralEstimate(X.t_missing, V.mat$tapers)
+    lsperio <- lomb_scargle(X.t_missing, f[-1])
     
     #calculate bandpass variance
-    
-    if(sum(f-1/(4*tau) == 0) & sum(f-1/(2*tau) == 0)){
-      f.min.index <- which(f == 1/(4*tau))
-      f.max.index <- which(f == 1/(2*tau))
-      bpvar.vec[i] <- 4*delta.f*(sum(MTSE_full$spectrum[f.min.index:(f.max.index - 1)]))
-    }
-    else{
-      f.min.index <- min(which(f>1/(4*tau) & f<1/(2*tau))) # some error here for some N choices, not sure what the issue is yet, but they return Inf and -Inf
-      f.max.index <- max(which(f>1/(4*tau) & f<1/(2*tau)))
-      if(f.min.index == f.max.index){
-        bpvar.vec[i] <- 4*(MTSE_full$spectrum[f.min.index-1]*(f[f.min.index] - 1/(4*tau)) + MTSE_full$spectrum[f.min.index]*(1/(2*tau) - f[f.min.index]))
-      }
-      else{
-        bpvar.vec[i] <- 4*delta.f*(sum(MTSE_full$spectrum[f.min.index:f.max.index]) + (f[f.min.index] - 1/(4*tau)) + (1/(2*tau) - f[f.max.index]) )
-      }
-    }
+    temp_bp <- integrate(approxfun(f, MTSE_full$spectrum), lower = 1/(4*tau), upper = 1/(2*tau), subdivisions = 1000)
+    bpvar.vec[i] <- 4*temp_bp$value
     
     #calculate transfer function AVAR
     G.vec <- transfer.func(f, tau)
-    G.vec[1] <- 1
+    G.vec[1] <- 0
     trfunc.vec[i] <- f[2]*sum(G.vec*MTSE_full$spectrum)
+    trfunc.vec_LS[i] <- f[2]*sum(G.vec[-1]*lsperio)
     
   }
   tmat[r,] <- trfunc.vec
   bmat[r,] <- bpvar.vec
+  lmat[r,] <- trfunc.vec_LS
 }
 
 
 ###also Calculate AVAR###
 
-amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = 11)
-
-for(i in 1:numberOfSimulations){
-  set.seed(i)
-  print(i)
-  #generate X.t
-  X.t <- rnorm(N,mean = 0, sd = 1)
-  
-  avar.calc <- getAvars(N,X.t, taus = c(2^(0:9), floor(N/3)))
-  amat[i,] <- avar.calc$avarRes$avars
-  oamat[i,] <- avar.calc$avarRes$overavars
-}
+# amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = length(taus))
+# 
+# for(i in 1:numberOfSimulations){
+#   set.seed(i)
+#   print(i)
+#   #generate X.t
+#   X.t_missing <- rnorm(N.long,mean = 0, sd = 1)
+#   X.t_missing[c(100:500, 1300:1400, 1700:1874, 2400:2722)] <- NA
+#   
+#   avar.calc <- getAvars(N,na.omit(X.t_missing), taus = taus)
+#   amat[i,] <- avar.calc$avarRes$avars
+#   oamat[i,] <- avar.calc$avarRes$overavars
+# }
 
 
 ### print time to run this first part
@@ -133,10 +130,11 @@ print(startTime-Sys.time())
 
 
 # likely need to save tmat and bmat to work with outside of the titans
-saveRDS(tmat,paste("Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
-saveRDS(bmat,paste("Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
-saveRDS(amat,paste("Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
-saveRDS(oamat,paste("Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+saveRDS(tmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
+saveRDS(bmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
+saveRDS(lmat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/lmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
+# saveRDS(amat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
+# saveRDS(oamat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseGaps.Rds",sep=""))
 
 
 
