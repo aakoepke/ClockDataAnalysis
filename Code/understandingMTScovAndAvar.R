@@ -2,14 +2,17 @@ rm(list=ls())
 source("/home/aak3/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
 source("Code/SA_ImportantFunctions.R")
 
-numberOfSimulations=300 #used when comparing calculated covariance to observed variance in simulated data
+numberOfSimulations=1000 #used when comparing calculated covariance to observed variance in simulated data
 
 ######################################################################
 ### simulate the data
 ######################################################################
 sizeOfData=1000
 t.vec <- 1:sizeOfData #time vector
-omitted<-c(20:35,50:63, 100:130)
+
+# omitted<-c(20:35,50:63, 100:130)
+omitted<-c(200:350,500:580, 700:850)
+
 t.vec[omitted] <- NA #take out values
 t.vec <- na.omit(t.vec) #vector of times with data
 dist.mat <- rdist(t.vec) #distance matrix (delta_nm)
@@ -19,10 +22,62 @@ N.fourier <- floor(N/2) + 1
 freq <- seq(0,0.5, length.out = N.fourier)
 
 delta.f <- freq[2] #interval spacing between frequencies, needed for spectral avar calculation
-numTapers=3
+numTapers=8
 
 ##calculate tapers for this data spacing
-V.mat <- get_tapers(t.vec, W = 4/N, K = numTapers)
+V.mat <- get_tapers(t.vec, W = 7/N, K = numTapers)
+V.mat$e.values
+
+
+############## WSDS 2023 plots
+####################
+x.t <- rnorm(sizeOfData) #data
+x.t[omitted] <- NA #take out values
+x.t=na.omit(x.t)
+
+taperDF=data.frame(V.mat$tapers)
+colnames(taperDF)=as.character(1:numTapers)
+taperDF$t=t.vec
+
+dataDF=data.frame(t=t.vec,
+                  value=x.t)
+###
+alltData=data.frame(t=min(taperDF$t):max(taperDF$t))
+
+taperDF=merge(alltData,taperDF,by="t",all.x = T)
+
+dataDF=merge(alltData,dataDF,by="t",all.x = T)
+dataDF$type="Data"
+dataDF$Taper="Data"
+
+taperDFlong=melt(taperDF,id.vars = "t",variable.name = "Taper")
+taperDFlong$type="Tapers"
+
+allTaperDat=bind_rows(taperDFlong,dataDF)
+
+
+library(RColorBrewer)
+# Define the number of colors you want
+nb.cols <- numTapers+1
+mycolors <- colorRampPalette(brewer.pal(8, "Accent"))(nb.cols)
+
+pdf("Plots/SimDataTapers_N1000.pdf",width = 6.5,height = 4)
+ggplot(allTaperDat,aes(t,value,col=Taper))+
+  geom_line()+
+  facet_wrap(~type,nrow = 2,scales = "free_y",
+             strip.position = "left", 
+             labeller = as_labeller(c(Data = "Clock Ratio Data", Tapers = "Tapers") ) )+
+  # scale_color_brewer(palette = "Accent")+
+  scale_color_manual(values=mycolors)+
+  # theme(axis.title.y=element_blank())+
+  theme(legend.position = "none",legend.title=element_blank(),strip.background = element_blank(),
+        strip.placement = "outside")+
+  ylab(NULL)
+dev.off()
+
+#########################
+
+
 
 ######################################################################
 ### using simulated data to check estimate of the spectrum covariance
@@ -65,17 +120,17 @@ Cov.mat_chave[upper.tri(Cov.mat_chave)] <- t(Cov.mat_chave)[upper.tri(Cov.mat_ch
 ### data frame with last spectral estimate and its covariance
 specDF_chave=data.frame(freq=freq,spec.hat=MTSE_full$spectrum,variance=diag(Cov.mat_chave),type="Chave")
 
-# simSum=simOut %>% group_by(freq) %>%
-#   summarise(mean=mean(spec.hat),variance=var(spec.hat))
+simSum=simOut %>% group_by(freq) %>%
+  summarise(mean=mean(spec.hat),variance=var(spec.hat))
 
-# ggplot()+
-#   # geom_point(data = specDF_chave,mapping = aes(freq,spec.hat,col=type))+
-#   # geom_errorbar(data = specDF_chave,aes(freq,spec.hat,ymin=spec.hat-sqrt(variance),ymax=spec.hat+sqrt(variance),col=type))+
-#   geom_hline(yintercept = 1)+
-#   geom_errorbar(data = simSum, mapping = aes(x = freq,ymin=mean-sqrt(var.Chave),ymax=mean+sqrt(var.Chave),col="Chave"))+
-#   geom_errorbar(data = simSum, mapping = aes(x = freq,ymin=mean-sqrt(variance),ymax=mean+sqrt(variance)))+
-#   geom_point(data = simSum, mapping = aes(x = freq,y=mean))
-#   # geom_point(data = simOut,mapping = aes(freq,spec.hat))
+ggplot()+
+  # geom_point(data = specDF_chave,mapping = aes(freq,spec.hat,col=type))+
+  # geom_errorbar(data = specDF_chave,aes(freq,spec.hat,ymin=spec.hat-sqrt(variance),ymax=spec.hat+sqrt(variance),col=type))+
+  geom_hline(yintercept = 1)+
+  # geom_errorbar(data = simSum, mapping = aes(x = freq,ymin=mean-sqrt(var.Chave),ymax=mean+sqrt(var.Chave),col="Chave"))+
+  geom_errorbar(data = simSum, mapping = aes(x = freq,ymin=mean-sqrt(variance),ymax=mean+sqrt(variance)))+
+  geom_point(data = simSum, mapping = aes(x = freq,y=mean))
+  # geom_point(data = simOut,mapping = aes(freq,spec.hat))
 
 #############################################################################################
 #compare var of simulated points to calc var
@@ -249,6 +304,95 @@ ggplot(allRes,aes(tau,avar,col=method,group=interaction(tau,method)))+
   annotation_logticks()+
   ylab(expression(sigma^2*(tau)))+
   xlab(expression(tau)) 
+
+
+#######################################################################################
+###### quick break for wsds 2023 plots
+#######################################################################################
+
+
+oldavars$Method="Current"
+avarOut$Method="Spectral"
+
+allRes=bind_rows(oldavars,avarOut)
+
+pdf("Plots/WhiteNoise_Gaps_N1000_Boxplots.pdf",width = 6.5,height = 4)
+ggplot(allRes,aes(tau,avar,col=Method,group=interaction(tau,Method)))+
+  geom_boxplot(lwd = 1)+
+  ### add true straight line below
+  geom_abline(slope = -1,intercept = 0,size=1)+
+  scale_y_log10()+
+  scale_x_log10()+
+  annotation_logticks()+
+  ylab(expression(sigma^2*(tau)))+
+  xlab(expression(tau)) 
+dev.off()
+
+####################
+
+# uncertainty for overavar
+
+avar_CI <- function(CI.level,noise_type = "white noise", avar_type, avars, taus,N){
+  
+  a <- (1-CI.level)/2
+  s.2=avars
+  
+  edf <- rep(NA, times = length(taus))
+  i=1
+  
+  if(noise_type == "white noise"){
+    for(m in taus){
+      edf[i] <- ((3*(N-1)/(2*m)) - (2*(N-2)/N))*(4*m^2)/(4*m^2 + 5)
+      i=i+1
+    }
+  }
+  
+  if(avar_type == "regular"){
+    CI.limits <- bind_rows("lower" = s.2 - s.2/N, "upper" = s.2 +  s.2/N)
+  }else{
+    CI.limits <- bind_rows("lower" = s.2*edf/qchisq(1-a,edf),"upper" = s.2*edf/qchisq(a, edf) )
+  }
+  return(CI.limits)
+}
+
+overlapplingavarSimSum=oldavars %>% group_by(tau) %>% summarise(var=var(avar),meanavar=mean(avar),meanadev=mean(sqrt(avar)))
+
+overlapplingavarInt <- avar_CI(CI.level = 0.68, noise_type = "white noise", 
+                 avar_type = "overlapping", 
+                 avars = overlapplingavarSimSum$meanavar,taus = overlapplingavarSimSum$tau,
+                 length(x.t))
+
+unc_res_old=data.frame(tau=overlapplingavarSimSum$tau,
+                       avar=overlapplingavarSimSum$meanavar,
+                       lower=overlapplingavarInt$lower,
+                       upper=overlapplingavarInt$upper,
+                       Method="Current")
+
+unc_res_spectral=data.frame(tau=avarSimSum$tau,
+                   avar=avarSimSum$mean,
+                   lower=avarSimSum$mean-sqrt(cov.mat),
+                   upper=avarSimSum$mean+sqrt(cov.mat),
+                   Method="Spectral")
+unc_res=bind_rows(unc_res_old,unc_res_spectral)
+
+pdf("Plots/SimData_avarUnc_N1000.pdf",width = 6.5,height = 4)
+ggplot(unc_res,aes(tau,avar,col=Method,ymin=lower,ymax=upper))+
+  geom_point(size=2)+
+  geom_errorbar(lwd=1)+
+  ### add true straight line below
+  geom_abline(slope = -1,intercept = 0,size=1)+
+  scale_y_log10()+
+  scale_x_log10()+
+  annotation_logticks()+
+  ylab(expression(sigma^2*(tau)))+
+  xlab(expression(tau))
+  # facet_wrap(~tau,scales = "free")
+dev.off()
+#######################################################################################
+#######################################################################################
+#######################################################################################
+
+
 
 
 ### results look similar, spectral looks tighter especially for higher tau

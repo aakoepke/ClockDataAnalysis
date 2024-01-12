@@ -54,7 +54,24 @@ datlong$seconds=1:dim(datlong)[1]
 ggplot(datlong,aes(seconds,FracDiff,color=Ratio))+
   geom_line()
 
+pdf("Plots/threeDaysSrYbdata.pdf",width = 6,height = 2)
+ggplot(filter(datlong,Ratio=="SrYb" & seconds>289696),aes(date,FracDiff))+
+  geom_line()+
+  ylab("Clock Noise Data")+
+  xlab("Date")
+dev.off()
 
+
+pdf("Plots/oneDaySrYbdata.pdf",width = 6,height = 2)
+ggplot(filter(datlong,Ratio=="SrYb" & seconds>289696 & seconds <299063),aes(date,FracDiff))+
+  geom_line()+
+  ylab("Clock Noise Data")+
+  xlab("Time (March 5th)")
+dev.off()
+
+
+View(filter(datlong,Ratio=="SrYb" & seconds>289696 & seconds <300000))
+which(!datlong$missing)[1]
 
 #####################make a function
 source("/home/aak3/NIST/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
@@ -127,6 +144,32 @@ calculateAvars=function(x.t,t.vec,taus,N.fourier=100,numTapers=3,calcCov,myW){
 }
 
 
+######################################################################
+######################################################################
+## subset of long day
+######################################################################
+######################################################################
+SrYbdat1longday_shortDayLength=filter(datlong,Ratio=="SrYb" & missing==F & seconds >300000 & seconds < 420000)[2000:(2000+6780-1),]
+t.vec <- SrYbdat1longday_shortDayLength$seconds
+x.t=SrYbdat1longday_shortDayLength$FracDiff
+
+plot(t.vec,x.t)
+
+###below stays the same
+N=length(x.t) # want 6780
+taus <- 2^(0:9)
+taus <- taus[taus<floor(N/3)]
+
+N.fourier=floor(N/2) + 1
+today=format(Sys.Date(),format="%b%d")
+resName=paste("SrYb1longday_shortDayLength",N.fourier,today,sep="_")
+
+res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=6,calcCov = F,myW=4/N*2)
+res$V.mat$e.values
+saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
+
+
+
 
 ######################################################################
 ######################################################################
@@ -151,7 +194,7 @@ N.fourier=floor(N/2) + 1
 today=format(Sys.Date(),format="%b%d")
 resName=paste("AlYb3days",N.fourier,today,sep="_")
 
-res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=3,calcCov = F,myW=4/N*3)
+res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=6,calcCov = F,myW=4/N*3)
 res$V.mat$e.values
 saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
 
@@ -180,7 +223,7 @@ N.fourier=floor(N/2) + 1
 today=format(Sys.Date(),format="%b%d")
 resName=paste("AlSr3days",N.fourier,today,sep="_")
 
-res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=3,calcCov = F,myW=4/N*3)
+res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=6,calcCov = F,myW=4/N*3)
 res$V.mat$e.values
 saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
 
@@ -200,10 +243,75 @@ N.fourier=floor(N/2) + 1
 today=format(Sys.Date(),format="%b%d")
 resName=paste("SrYb3days",N.fourier,today,sep="_")
 
-res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=3,calcCov = F,myW=4/N*3)
+res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=6,calcCov = F,myW=4/N*3)
 saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
 
 Sys.time()-startTime
+
+
+# ######################################################################
+# ## SrYb, 2 days
+# ######################################################################
+SrYbdat2days=filter(datlong,Ratio=="SrYb" & missing==F & seconds >300000)
+t.vec <- SrYbdat2days$seconds
+x.t=SrYbdat2days$FracDiff
+
+plot(t.vec,x.t)
+
+###below stays the same
+N=length(x.t)
+taus <- 2^(0:9)
+taus <- taus[taus<floor(N/3)]
+
+N.fourier=floor(N/2) + 1
+today=format(Sys.Date(),format="%b%d")
+resName=paste("SrYb2days",N.fourier,today,sep="_")
+
+res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=6,calcCov = F,myW=4/N*3)
+saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
+
+# ######################################################################
+# ## SrYb, 1 long day
+# ######################################################################
+SrYbdat1longday=filter(datlong,Ratio=="SrYb" & missing==F & seconds >300000 & seconds < 420000)
+t.vec <- SrYbdat1longday$seconds
+x.t=SrYbdat1longday$FracDiff
+
+plot(t.vec,x.t)
+
+###below stays the same
+N=length(x.t)
+taus <- 2^(0:9)
+taus <- taus[taus<floor(N/3)]
+
+N.fourier=floor(N/2) + 1
+today=format(Sys.Date(),format="%b%d")
+resName=paste("SrYb1longday",N.fourier,today,sep="_")
+
+res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=6,calcCov = F,myW=4/N*3)
+saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
+
+# ######################################################################
+# ## SrYb, 1 short day
+# ######################################################################
+SrYbdat1shortday=filter(datlong,Ratio=="SrYb" & missing==F & seconds <300000)# & seconds < 420000)
+t.vec <- SrYbdat1shortday$seconds
+x.t=SrYbdat1shortday$FracDiff
+
+plot(t.vec,x.t)
+
+###below stays the same
+N=length(x.t)
+taus <- 2^(0:9)
+taus <- taus[taus<floor(N/3)]
+
+N.fourier=floor(N/2) + 1
+today=format(Sys.Date(),format="%b%d")
+resName=paste("SrYb1shortday",N.fourier,today,sep="_")
+
+res=calculateAvars(x.t,t.vec,taus,N.fourier=N.fourier,numTapers=6,calcCov = F,myW=4/N*3)
+saveRDS(res,file = paste("/home/aak3/NIST/ClockDataAnalysis/Data/resultsFor",resName,".Rds",sep=""))
+
 
 
 ######################################################################
