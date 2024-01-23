@@ -22,48 +22,54 @@ plot(lsperio$power*sum(x.t^2, na.rm = T), type = "l")
 
 spec.pgram(x.t)
 
-##code myself using VanderPlas2018
+##code myself using https://www.mathworks.com/help/signal/ref/plomb.html#lomb
 N <- 2048
 g <- rnorm(N)
-missing.points <- c(20:40, 60:80)
+missing.points <- c(20:400, 600:800)
 g[missing.points] <- NA
 t.vec <- 1:N
 t.vec[missing.points] <- NA
-g.missing <- g %>% as_tibble() %>% drop_na()
-t.missing <- t.vec %>% as_tibble() %>% drop_na()
 
-lsp.check <- lsp(x = x.t, times = t.vec, plot = FALSE)
-f <- lsp.check$scanned
+
+lsp.check <- lsp(x = g, times = t.vec, plot = TRUE)
+f <- seq(0,0.5, length.out = floor(length(na.omit(t.vec))/2) + 1)
+
+
+lsp.mine <- lomb_scargle(g,f[-1])
+
+plot(lsp.mine$freqs, lsp.mine$lsp, type = "l")
+check <- spec.pgram(g)
+
+
+########### Functions ################
+
+#lomb-scargle function
 
 lomb_scargle <- function(x.t,f){
   
   ## calculates the Lomb-Scargle Periodogram for data x.t at frequencies f##
   
   N <- length(x.t)
+  L <- length(f)
   t.vec <- 1:N
   t.vec[which(is.na(x.t))] <- NA
   x.missing <- na.omit(x.t)
   t.missing <- na.omit(t.vec)
   
-  lsperio <- rep(NA, times = length(f))
+  lsperio <- rep(NA, times = L)
   
-  for(i in 1:length(f)){
+  for(i in 1:L){
     x.centered <- x.missing - mean(x.missing)
     x.var <- var(x.missing)
     tau.value <- tau.shift(f[i], t.missing)
     c.vec <- cos(2*pi*(f[i]*(t.missing - tau.value)))
     s.vec <- sin(2*pi*(f[i]*(t.missing - tau.value)))
-    lsperio[i] <- (1/(2*g.var))*((g.centered%*%c.vec)^2/sum(c.vec^2) + 
-                                   (g.centered%*%s.vec)^2/sum(s.vec^2))
+    lsperio[i] <- (1/(2*g.var))*((x.centered%*%c.vec)^2/sum(c.vec^2) + 
+                                   (x.centered%*%s.vec)^2/sum(s.vec^2))
   }
   
-  return(list("lsp" = lsperio, "freqs" = f))
+  return(lsperio)
 }
-
-
-plot(lsperio, type = "l", ylim = c(0,1.5))
-
-
 
 #tau function
 tau.shift <- function(f,t){
