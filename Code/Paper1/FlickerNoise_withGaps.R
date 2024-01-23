@@ -124,11 +124,13 @@ for(k in c(2^(0:9), floor(N/3))){
 
 amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = length(taus))
 
+
 for(i in 1:numberOfSimulations){
   set.seed(i)
   print(i)
   #generate X.t
-  X.t_missing <- X.t_sims_flk_gps[i,]
+  X.t_missing <- arfima.sim(N.long, model = list(dfrac = 0.25))
+  X.t_missing[c(100:500,1300:1400, 1700:1874, 2400:2722)] <- NA
 
   avar.calc <- getAvars(N,na.exclude(X.t_missing), taus = taus)
   amat[i,] <- avar.calc$avarRes$avars
