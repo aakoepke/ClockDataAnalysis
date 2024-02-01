@@ -51,17 +51,18 @@ runDate=format(Sys.Date(),"%m%d%y")
 # setK = 4
 
 ###run6
-setWnum = 5
+setWnum = 9
 setW = setWnum/N
 setK = 8
 
 print(setWnum)
 print(setK)
+
 ######################################
 ###### Study 1: White Noise ##########
 ######   WN(0,1), no gaps    #########
 ######################################
-# N <- 7200
+
 trfunc.vec <- bpvar.vec <- rep(NA, times = numberOfSimulations)
 taus <- c(2^(0:9), floor(N/3))
 tmat <- bmat <- matrix(NA, ncol = numberOfSimulations, nrow = length(taus))
@@ -72,8 +73,7 @@ delta.f <- f[2]
 ##calculate tapers
 t.n <- 1:N
 V.mat <- get_tapers(t.n, W = setW, K = setK)
-V.mat$e.values
-plot(V.mat$tapers[,8])
+taperMatrix <- V.mat$tapers
 
 r = 0
 for(k in taus){
@@ -88,11 +88,11 @@ for(i in 1:numberOfSimulations){
     X.t <- rnorm(N,mean = 0, sd = 1)
     
     #calculate S.hat
-    MTSE_full <- MT_spectralEstimate(X.t, V.mat$tapers)
+    MTSE_full <- MT_spectralEstimate(X.t, taperMatrix)
     
     #calculate bandpass variance
-    temp_bp <- integrate(approxfun(f, MTSE_full$spectrum), lower = 1/(4*tau), upper = 1/(2*tau), subdivisions = 1000)
-    bpvar.vec[i] <- 4*temp_bp$value
+    #temp_bp <- integrate(approxfun(f, MTSE_full$spectrum), lower = 1/(4*tau), upper = 1/(2*tau), subdivisions = 1000)
+    #bpvar.vec[i] <- 4*temp_bp$value
     
     #calculate transfer function AVAR
     G.vec <- transfer.func(f, tau)
@@ -101,24 +101,24 @@ for(i in 1:numberOfSimulations){
     
   }
   tmat[r,] <- trfunc.vec
-  bmat[r,] <- bpvar.vec
+  #bmat[r,] <- bpvar.vec
 }
 
 
 ###also Calculate AVAR###
 
-amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = length(taus))
-
-for(i in 1:numberOfSimulations){
-  set.seed(i)
-  print(i)
-  #generate X.t
-  X.t <- rnorm(N,mean = 0, sd = 1)
-  
-  avar.calc <- getAvars(N,X.t, taus = taus)
-  amat[i,] <- avar.calc$avarRes$avars
-  oamat[i,] <- avar.calc$avarRes$overavars
-}
+# amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = length(taus))
+# 
+# for(i in 1:numberOfSimulations){
+#   set.seed(i)
+#   print(i)
+#   #generate X.t
+#   X.t <- rnorm(N,mean = 0, sd = 1)
+#   
+#   avar.calc <- getAvars(N,X.t, taus = taus)
+#   amat[i,] <- avar.calc$avarRes$avars
+#   oamat[i,] <- avar.calc$avarRes$overavars
+# }
 
 
 ### print time to run this first part
