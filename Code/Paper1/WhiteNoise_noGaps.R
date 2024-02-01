@@ -15,7 +15,7 @@ source("/home/cmb15/ClockDataAnalysis/Code/SA_ImportantFunctions.R")
 ##############################################
 ##############################################
 
-numberOfSimulations = 500
+numberOfSimulations = 1000
 N = 2048
 
 ## keeping track of how long this all takes
@@ -72,7 +72,8 @@ delta.f <- f[2]
 ##calculate tapers
 t.n <- 1:N
 V.mat <- get_tapers(t.n, W = setW, K = setK)
-
+V.mat$e.values
+plot(V.mat$tapers[,8])
 
 r = 0
 for(k in taus){
@@ -131,4 +132,7 @@ saveRDS(amat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/amat",runD
 saveRDS(oamat,paste("/home/cmb15/ClockDataAnalysis/Code/Paper1/Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
 
 
+#saveRDS(tmat,paste("Code/Paper1/Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+#saveRDS(bmat,paste("Code/Paper1/Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
+#saveRDS(oamat,paste("Code/Paper1/Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_WhiteNoiseNoGaps.Rds",sep=""))
 
