@@ -211,6 +211,34 @@ MT_spectralEstimate_freqs <- function(X.t, freqs, V.mat){
   }
   return(list("spectrum" = S.x.hat, "freqs" = freqs))
 }
+
+
+#input: X.t = time series of length N with any missing values and length L without, 
+#       V.mat = L X K dimension taper matrix
+#output: freqs = fourier frequencies
+#       spectrum = spectral estimate
+
+MT_spectralEstimate_fft <- function(X.t, V.mat){
+  
+  ##use tapers to generate spectral estimate
+  N <- length(na.exclude(X.t))
+  N.fourier <- floor(N/2) + 1
+  S.x.hat <- rep(NA, times = N.fourier)
+  freqs <- seq(0,0.5, length.out = N.fourier)
+  K <- dim(V.mat)[2]
+  S.k.mat <- matrix(NA,nrow = K, ncol = N.fourier)
+  
+    for(k in 1:K){
+      spec.vec <- fft(taperMatrix[,k]*na.exclude(X.t))[1:N.fourier]
+      S.k.mat[k,] <- abs(spec.vec)^2
+    }
+  
+    S.x.hat <- apply(S.k.mat, MARGIN = 2, FUN = mean)
+  
+  return(list("spectrum" = S.x.hat, "freqs" = freqs))
+}
+
+
 ######################################################################################################
 ###### Calculate sigma.hat_tau using transfer function method (see "reappraisal...", page 70) ########
 ######################################################################################################
@@ -382,4 +410,14 @@ lomb_scargle <- function(x.t,f){
 #tau function
 tau.shift <- function(f,t){
   (1/(4*pi*f))*atan(sum(sin(4*pi*f*t))/sum(cos(4*pi*f*t)))
+}
+
+
+#### generating pink noise from Tara
+
+generate_pink_noise <- function(length, fs) {
+  pink_noise <- cumsum(rnorm(length))
+  pink_noise <- pink_noise - mean(pink_noise)
+  pink_noise <- pink_noise / max(abs(pink_noise))
+  return(pink_noise)
 }
