@@ -11,7 +11,8 @@ library(tidyverse)
 
 #source("/home/cmb15/ClockDataAnalysis/Code/Paper1/FlickerNoise_noGaps.R")
 
-numberOfSimulations = 300
+numberOfSimulations = 1000
+N = 2048
 
 ## keeping track of how long this all takes
 startTime=Sys.time()
@@ -46,23 +47,20 @@ runDate=format(Sys.Date(),"%m%d%y")
 # setK = 4
 
 ###run6
-setWnum = 4
+setWnum = 6
 setW = setWnum/N
-setK = 6
+setK = 8
 
+V.mat <- get_tapers(1:N, W = setW, K = setK)
+taperMatrix <- V.mat$tapers
+V.mat$e.values
+plot(taperMatrix[,setK])
 ###run7
 # setWnum = 4
 # setW = setWnum/N
 # setK = 7
 
-Wnums <- 6:10
-Ks <- 2*Wnums -1
 
-
-# for(w in 1:length(Wnums)){
-#     setWnum = Wnums[w]
-#     setW = setWnum/N
-#     setK = Ks[w]
     
 print(setWnum)
 print(setK)
@@ -71,69 +69,88 @@ print(setK)
 ###### Study 2a: Flicker Noise ########
 ######      with no gaps     ##########
 #######################################
-N <- 1024
-trfunc.vec <- bpvar.vec <- rep(NA, times = numberOfSimulations)
 
-tmat <- bmat <- matrix(NA, ncol = numberOfSimulations, nrow = 10)
+##initialize vectors/matrices to save results into
+
+#avar estimates using transfer function, bandpass variance, and LS periodogram
+trfunc.vec <- bpvar.vec <- trfunc.vec_LS <- rep(NA, times = numberOfSimulations) #1 x numberofSimulations
+
+#values of tau to calculate sigma^2(tau) 
+taus <- c(2^(0:9), floor(N/3))
+
+#matrices for saving transfer function, bandpass variance, and ls periodogram based estimates
+tmat <- bmat <- lmat <- matrix(NA, nrow = numberOfSimulations, ncol = length(taus)) #number of Simulations x number of taus
+
+#matrix for saving the numberofSimulations MTSEs
+MTSE_mat <- matrix(NA, ncol = N/2 + 1, nrow = numberOfSimulations)
 
 f <- seq(0,0.5,length.out = N/2 + 1) #grid of frequencies
-delta.f <- f[2]
+delta.f <- f[2] #delta of frequencies
 
 ##calculate tapers
-t.n <- 1:N
-V.mat <- get_tapers(t.n, W = setW, K = setK)
+V.mat <- get_tapers(1:N, W = setW, K = setK)
+taperMatrix <- V.mat$tapers
+V.mat$e.values
+plot(taperMatrix[,6])
 
-X.t_sims_flk <- readRDS("//cfs2w.nist.gov/unix$/776unix/cmb15/ClockDataAnalysis/Code/Paper1/Results/FlickerSims_noGaps_N2048_300.Rds")
+for(i in 1:numberOfSimulations){
+  print(i)
+  set.seed(i)
+  
+  #generate X.t
+  X.t <- generate_pink_noise(length = N, fs = 1) #arfima.sim(N, model = list(dfrac = 0.4999999))
+  #X.t_missing[c(100:150,1300:1400, 1700:1752)] <- NA
+  
+  #calculate S.hat, save to matrix row
+  MTSE_mat[i,] <- MT_spectralEstimate_fft(X.t, taperMatrix)$spectrum
+  #LS periodogram
+  #lsperio <- lomb_scargle(X.t_missing, f[-1])
+  
+}
 
 g = 0
-for(k in c(2^(0:8), floor(N/3))){
+for(k in taus){
+  print(k)
   g = g + 1
   tau = k
+  
   for(i in 1:numberOfSimulations){
-    print(i)
-    print(paste("g = ", g))
-    set.seed(i)
-    #get ith simulation
-    X.t <- arfima.sim(N, model = list(dfrac = 0.25))
-    
-    #calculate S.hat
-    MTSE_full <- MT_spectralEstimate(X.t, V.mat)
     
     #calculate bandpass variance
-    temp_bp <- integrate(approxfun(f, MTSE_full$spectrum), lower = 1/(4*tau), upper = 1/(2*tau), subdivisions = 1000)
+    temp_bp <- integrate(approxfun(f, MTSE_mat[i,]), lower = 1/(4*tau), upper = 1/(2*tau), subdivisions = 1000)
     bpvar.vec[i] <- 4*temp_bp$value
     
     #calculate transfer function AVAR
     G.vec <- transfer.func(f, tau)
-    G.vec[1] <- 1
-    trfunc.vec[i] <- f[2]*sum(G.vec*MTSE_full$spectrum)
+    G.vec[1] <- 0
+    trfunc.vec[i] <- f[2]*sum(G.vec*MTSE_mat[i,])
     
   }
-  tmat[g,] <- trfunc.vec
-  bmat[g,] <- bpvar.vec
+  
+  tmat[,g] <- trfunc.vec
+  bmat[,g] <- bpvar.vec
 }
 
 ##AVAR calculation
 ### only need to run once #####
 # 
-amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = 10)
+amat <- oamat <- matrix(NA, nrow = numberOfSimulations, ncol = length(taus))
 
 for(i in 1:numberOfSimulations){
-  #get X.t from simulation matrix
   print(i)
   set.seed(i)
-  X.t <- arfima.sim(N, model = list(dfrac = 0.25))
+  X.t <- generate_pink_noise(length = N, fs = 1) #arfima.sim(N, model = list(dfrac = 0.4999999))
 
-  avar.calc <- getAvars(N,X.t, taus = c(2^(0:8), floor(N/3)))
+  avar.calc <- getAvars(N,X.t, taus = taus)
   amat[i,] <- avar.calc$avarRes$avars
   oamat[i,] <- avar.calc$avarRes$overavars
 }
 
 # likely need to save tmat and bmat to work with outside of the titans
-saveRDS(tmat,paste("Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseNoGaps.Rds",sep=""))
-saveRDS(bmat,paste("Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseNoGaps.Rds",sep=""))
-# saveRDS(amat,paste("Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseNoGaps.Rds",sep=""))
-# saveRDS(oamat,paste("Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseNoGaps.Rds",sep=""))
+saveRDS(tmat,paste("Code/Paper1/Results/tmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseNoGaps.Rds",sep=""))
+saveRDS(bmat,paste("Code/Paper1/Results/bmat",runDate,"_W",setWnum,"_K",setK,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseNoGaps.Rds",sep=""))
+saveRDS(amat,paste("Code/Paper1/Results/amat",runDate,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseNoGaps.Rds",sep=""))
+saveRDS(oamat,paste("Code/Paper1/Results/oamat",runDate,"_N",N,"_",numberOfSimulations,"sims_FlickerNoiseNoGaps.Rds",sep=""))
 
 # }
 
