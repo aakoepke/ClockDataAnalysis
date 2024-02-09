@@ -307,25 +307,49 @@ overlapping_avar_fn <- function(y,m){
 }
 
 
-#calculates avar uncertainty for a given averaging factor (m) and data (y)
-# m=tau (can be vector)
-# avar can be vector
-avar_unc <- function(N,m,avar){
-  
-  # N=length(y)
-  
-  edf=((3*(N-1)/(2*m))-((2*(N-2))/N))*((4*m^2)/(4*m^2+5))
+# #calculates avar uncertainty for a given averaging factor (m) and data (y)
+# # m=tau (can be vector)
+# # avar can be vector
+# avar_unc <- function(N,m,avar){
+#   
+#   # N=length(y)
+#   
+#   edf=((3*(N-1)/(2*m))-((2*(N-2))/N))*((4*m^2)/(4*m^2+5))
+# 
+#   lower=avar*edf/qchisq(p = c(.975),df = edf) 
+#   upper=avar*edf/qchisq(p = c(.025),df = edf)
+#   ## hard coding these for 95% intervals, but scientists usually use 1-sigma intervals, and below is Dave's code 
+#   ## (not sure where those numbers come from exactly...)
+#   ## osigMax(j) = sqrt(edf/chi2inv(.1573,edf));
+#   ## osigMin(j) = sqrt(edf/chi2inv(.8427,edf));
+#   
+#   UncDF=data.frame(tau=m,avar=avar,lower=lower, upper=upper)
+#   
+#   return(UncDF)
+# }
+# uncertainty for overavar
 
-  lower=avar*edf/qchisq(p = c(.975),df = edf) 
-  upper=avar*edf/qchisq(p = c(.025),df = edf)
-  ## hard coding these for 95% intervals, but scientists usually use 1-sigma intervals, and below is Dave's code 
-  ## (not sure where those numbers come from exactly...)
-  ## osigMax(j) = sqrt(edf/chi2inv(.1573,edf));
-  ## osigMin(j) = sqrt(edf/chi2inv(.8427,edf));
+avar_CI <- function(CI.level,noise_type = "white noise", avar_type, avars, taus,N){
   
-  UncDF=data.frame(tau=m,avar=avar,lower=lower, upper=upper)
+  a <- (1-CI.level)/2
+  s.2=avars
   
-  return(UncDF)
+  edf <- rep(NA, times = length(taus))
+  i=1
+  
+  if(noise_type == "white noise"){
+    for(m in taus){
+      edf[i] <- ((3*(N-1)/(2*m)) - (2*(N-2)/N))*(4*m^2)/(4*m^2 + 5)
+      i=i+1
+    }
+  }
+  
+  if(avar_type == "regular"){
+    CI.limits <- bind_rows("lower" = s.2 - s.2/N, "upper" = s.2 +  s.2/N)
+  }else{
+    CI.limits <- bind_rows("lower" = s.2*edf/qchisq(1-a,edf),"upper" = s.2*edf/qchisq(a, edf) )
+  }
+  return(CI.limits)
 }
 
 
