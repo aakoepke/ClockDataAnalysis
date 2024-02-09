@@ -307,6 +307,28 @@ overlapping_avar_fn <- function(y,m){
 }
 
 
+#calculates avar uncertainty for a given averaging factor (m) and data (y)
+# m=tau (can be vector)
+# avar can be vector
+avar_unc <- function(N,m,avar){
+  
+  # N=length(y)
+  
+  edf=((3*(N-1)/(2*m))-((2*(N-2))/N))*((4*m^2)/(4*m^2+5))
+
+  lower=avar*edf/qchisq(p = c(.975),df = edf) 
+  upper=avar*edf/qchisq(p = c(.025),df = edf)
+  ## hard coding these for 95% intervals, but scientists usually use 1-sigma intervals, and below is Dave's code 
+  ## (not sure where those numbers come from exactly...)
+  ## osigMax(j) = sqrt(edf/chi2inv(.1573,edf));
+  ## osigMin(j) = sqrt(edf/chi2inv(.8427,edf));
+  
+  UncDF=data.frame(tau=m,avar=avar,lower=lower, upper=upper)
+  
+  return(UncDF)
+}
+
+
 #inputs: length of data (N), data (y), 
 #        vector of tau values at which you want AVAR/OVAR calculated (taus)
 #outputs:avarRes = data frame with taus, avar estimates, ovar estimates, slope/int fit
