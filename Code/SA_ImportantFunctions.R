@@ -213,6 +213,42 @@ MT_spectralEstimate_freqs <- function(X.t, freqs, V.mat){
 }
 
 
+########function to calculate spectrum and covariance matrix 
+
+spectralEstWithUnc=function(x.t,t.vec,numTapers){
+  N <- length(t.vec)
+  
+  V.mat <- get_tapers(t.vec, W = 7/N, K = numTapers)
+  MTSE_full <- MT_spectralEstimate(x.t, V.mat$tapers) #new function, calculates just spectrum
+  N <- length(t.vec)
+  N.fourier <- floor(N/2) + 1
+  freq <- seq(0,0.5, length.out = N.fourier)
+  
+  delta.f <- freq[2] #interval spacing between frequencies, needed for spectral avar calculation
+  
+  ### calculate the covariance matrix 
+  Cov.mat_chave <- matrix(NA, nrow = N.fourier, ncol = N.fourier)
+  
+  for(i in 1:N.fourier){
+    j = 1
+    while(j <= i){
+      Cov.mat_chave[i,j] <- norm(Conj(t(V.mat$tapers*exp(-im*2*pi*freq[i]*t.vec)*(1/sqrt(numTapers))))%*%(V.mat$tapers*exp(-im*2*pi*freq[j]*t.vec)*(1/sqrt(numTapers))), type = "2") 
+      j = j+1
+    }
+  }
+  
+  Cov.mat_chave[upper.tri(Cov.mat_chave)] <- t(Cov.mat_chave)[upper.tri(Cov.mat_chave)]
+  
+  
+  return(list(freq=freq,
+              spec.hat=MTSE_full$spectrum,Cov.mat=Cov.mat_chave))
+  
+}
+
+########## calculate avar and unc from results of spectralEstWithUnc
+
+
+
 #input: X.t = time series of length N with any missing values and length L without, 
 #       V.mat = L X K dimension taper matrix
 #output: freqs = fourier frequencies
@@ -266,6 +302,24 @@ AVAR_trfunc <- function(spectral_est, taus){
   return(out)
 }
 
+
+AVAR_trfunc_withUnc <- function(spectral_est, taus,Cov.mat_chave){
+  f <- seq(0,0.5,length.out = length(spectral_est))
+  
+  cov.mat=avar=numeric(length(taus))
+  
+  for(i in 1:length(taus)){
+    G.vec <- transfer.func(f,tau = taus[i]) 
+    G.vec[1] <- 0 
+    
+    avar[i]=f[2]*sum(G.vec*spectral_est)
+    
+    #calculate variance for the AVAR estimate at the given tau
+    cov.mat[i] <- t(G.vec)%*%(Cov.mat_chave)%*%G.vec*(f[2])^2
+    
+  }
+  return(list(avar=avar,avarUnc=cov.mat))
+}
 
 ########## AVAR/OVAR Functions #######
 
