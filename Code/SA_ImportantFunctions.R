@@ -318,7 +318,7 @@ AVAR_trfunc_withUnc <- function(spectral_est, taus,Cov.mat_chave){
     cov.mat[i] <- t(G.vec)%*%(Cov.mat_chave)%*%G.vec*(f[2])^2
     
   }
-  return(list(avar=avar,avarUnc=cov.mat))
+  return(list(avar=avar,avarVar=cov.mat))
 }
 
 ########## AVAR/OVAR Functions #######
