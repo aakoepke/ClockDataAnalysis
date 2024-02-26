@@ -213,6 +213,42 @@ MT_spectralEstimate_freqs <- function(X.t, freqs, V.mat){
 }
 
 
+########function to calculate spectrum and covariance matrix 
+
+spectralEstWithUnc=function(x.t,t.vec,numTapers){
+  N <- length(t.vec)
+  
+  V.mat <- get_tapers(t.vec, W = 7/N, K = numTapers)
+  MTSE_full <- MT_spectralEstimate(x.t, V.mat$tapers) #new function, calculates just spectrum
+  N <- length(t.vec)
+  N.fourier <- floor(N/2) + 1
+  freq <- seq(0,0.5, length.out = N.fourier)
+  
+  delta.f <- freq[2] #interval spacing between frequencies, needed for spectral avar calculation
+  
+  ### calculate the covariance matrix 
+  Cov.mat_chave <- matrix(NA, nrow = N.fourier, ncol = N.fourier)
+  
+  for(i in 1:N.fourier){
+    j = 1
+    while(j <= i){
+      Cov.mat_chave[i,j] <- norm(Conj(t(V.mat$tapers*exp(-im*2*pi*freq[i]*t.vec)*(1/sqrt(numTapers))))%*%(V.mat$tapers*exp(-im*2*pi*freq[j]*t.vec)*(1/sqrt(numTapers))), type = "2") 
+      j = j+1
+    }
+  }
+  
+  Cov.mat_chave[upper.tri(Cov.mat_chave)] <- t(Cov.mat_chave)[upper.tri(Cov.mat_chave)]
+  
+  
+  return(list(freq=freq,
+              spec.hat=MTSE_full$spectrum,Cov.mat=Cov.mat_chave))
+  
+}
+
+########## calculate avar and unc from results of spectralEstWithUnc
+
+
+
 #input: X.t = time series of length N with any missing values and length L without, 
 #       V.mat = L X K dimension taper matrix
 #output: freqs = fourier frequencies
@@ -267,6 +303,24 @@ AVAR_trfunc <- function(spectral_est, taus){
 }
 
 
+AVAR_trfunc_withUnc <- function(spectral_est, taus,Cov.mat_chave){
+  f <- seq(0,0.5,length.out = length(spectral_est))
+  
+  cov.mat=avar=numeric(length(taus))
+  
+  for(i in 1:length(taus)){
+    G.vec <- transfer.func(f,tau = taus[i]) 
+    G.vec[1] <- 0 
+    
+    avar[i]=f[2]*sum(G.vec*spectral_est)
+    
+    #calculate variance for the AVAR estimate at the given tau
+    cov.mat[i] <- t(G.vec)%*%(Cov.mat_chave)%*%G.vec*(f[2])^2
+    
+  }
+  return(list(avar=avar,avarVar=cov.mat))
+}
+
 ########## AVAR/OVAR Functions #######
 
 
@@ -304,6 +358,52 @@ overlapping_avar_fn <- function(y,m){
   out <- 1/(2*m^2*(M - 2*m + 1))*outer.sum
   
   return(out)
+}
+
+
+# #calculates avar uncertainty for a given averaging factor (m) and data (y)
+# # m=tau (can be vector)
+# # avar can be vector
+# avar_unc <- function(N,m,avar){
+#   
+#   # N=length(y)
+#   
+#   edf=((3*(N-1)/(2*m))-((2*(N-2))/N))*((4*m^2)/(4*m^2+5))
+# 
+#   lower=avar*edf/qchisq(p = c(.975),df = edf) 
+#   upper=avar*edf/qchisq(p = c(.025),df = edf)
+#   ## hard coding these for 95% intervals, but scientists usually use 1-sigma intervals, and below is Dave's code 
+#   ## (not sure where those numbers come from exactly...)
+#   ## osigMax(j) = sqrt(edf/chi2inv(.1573,edf));
+#   ## osigMin(j) = sqrt(edf/chi2inv(.8427,edf));
+#   
+#   UncDF=data.frame(tau=m,avar=avar,lower=lower, upper=upper)
+#   
+#   return(UncDF)
+# }
+# uncertainty for overavar
+
+avar_CI <- function(CI.level,noise_type = "white noise", avar_type, avars, taus,N){
+  
+  a <- (1-CI.level)/2
+  s.2=avars
+  
+  edf <- rep(NA, times = length(taus))
+  i=1
+  
+  if(noise_type == "white noise"){
+    for(m in taus){
+      edf[i] <- ((3*(N-1)/(2*m)) - (2*(N-2)/N))*(4*m^2)/(4*m^2 + 5)
+      i=i+1
+    }
+  }
+  
+  if(avar_type == "regular"){
+    CI.limits <- bind_rows("lower" = s.2 - s.2/N, "upper" = s.2 +  s.2/N)
+  }else{
+    CI.limits <- bind_rows("lower" = s.2*edf/qchisq(1-a,edf),"upper" = s.2*edf/qchisq(a, edf) )
+  }
+  return(CI.limits)
 }
 
 
