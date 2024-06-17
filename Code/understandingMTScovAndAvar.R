@@ -305,7 +305,22 @@ ggplot(allRes,aes(tau,avar,col=method,group=interaction(tau,method)))+
   ylab(expression(sigma^2*(tau)))+
   xlab(expression(tau)) 
 
+##########################################HERE!!!
+### here can compare old way avar and unc (with new function) and our error bars
 
+#this plot might help
+# ggplot(data = avarSimSum,mapping = aes(tau,mean,ymin=mean-2*sqrt(var),ymax=mean+2*sqrt(var)))+
+#   geom_errorbar()+
+#   scale_y_log10()+
+#   scale_x_log10()+
+#   annotation_logticks()+
+#   geom_point()
+
+
+
+
+
+############################################
 #######################################################################################
 ###### quick break for wsds 2023 plots
 #######################################################################################
