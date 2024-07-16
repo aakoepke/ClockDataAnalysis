@@ -5,8 +5,8 @@
 #### libraries #####
 library(future) #parallel
 library(future.apply) #parallel
-#plan(multicore, workers = 12) # can set the number of cores with "workers = X" argument
-plan(multisession, workers = 8)
+plan(multicore, workers = 12) # can set the number of cores with "workers = X" argument
+#plan(multisession, workers = 16)
 
 ### needed functions ####
 get_tapers <- function(t.n, W, K){
@@ -26,11 +26,11 @@ get_tapers <- function(t.n, W, K){
 
 
 ## time vector
-t.vector <- 1:400
+t.vector <- 1:1000
 dat_length <- length(t.vector)
 
 ## tapers
-setW = 5/N
+setW = 8/N
 setK = 5
 taperObject <- get_tapers(t.vector, W = setW, K = setK)
 taperMatrix <- taperObject$tapers
@@ -49,7 +49,7 @@ R_matrix <- diag(1, nrow = dat_length) #to start
 
 ## frequency vector
 
-freq_vec <- seq(0,0.5, length.out = N)
+freq_vec <- seq(0,0.5, length.out = dat_length)
 
 compute_entry <- function(i,j, N = dat_length, K = setK, taperMat = taperMatrix, R_mat = R_matrix, freq = freq_vec, t.vec = t.vector){
   V_star_mat <- t(taperMat*exp(1i*2*pi*freq[i]*t.vec))
