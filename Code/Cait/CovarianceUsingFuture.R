@@ -26,7 +26,7 @@ get_tapers <- function(t.n, W, K){
 
 
 ## time vector
-t.vector <- 1:1000
+t.vector <- 1:100
 dat_length <- length(t.vector)
 
 ## tapers
