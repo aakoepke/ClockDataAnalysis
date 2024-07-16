@@ -3,9 +3,25 @@
 #### calculating C_ij = ||V_i*RV_j||^2 with parallelization #####
 
 #### libraries #####
-library(future)
-library(future.apply)
+library(future) #parallel
+library(future.apply) #parallel
 plan(multicore) # can set the number of cores with "workers = X" argument
+
+### needed functions ####
+get_tapers <- function(t.n, W, K){
+  dist.mat <- fields::rdist(stats::na.omit(t.n))
+  
+  #create the A' matrix (Chave 2019 equation (22))
+  A.prime <- (1/(pi*dist.mat))*sin(2*pi*W*dist.mat)
+  A.prime[row(A.prime) == col(A.prime)] <- W*2
+  print("A matrix computed")
+  
+  eigdec <- RSpectra::eigs(A.prime, k = K, which = "LM")
+  eig_vecs <- eigdec$vectors #get only the vectors
+  print("tapers computed")
+  
+  return(list("tapers" = eig_vecs, "e.values" = eigdec$values))
+} 
 
 
 ## time vector
