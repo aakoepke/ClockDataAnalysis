@@ -25,18 +25,18 @@ get_tapers <- function(t.n, W, K){
 
 
 ## time vector
-t.vec <- 1:1000
-N <- length(t.vec)
+t.vector <- 1:1000
+dat_length <- length(t.vector)
 
 ## tapers
-W = 5/N
-K = 5
-taperObject <- get_tapers(t.vec, W = W, K = K)
-taperMat <- taperObject$tapers
+setW = 5/N
+setK = 5
+taperObject <- get_tapers(t.vector, W = setW, K = setK)
+taperMatrix <- taperObject$tapers
 
 ## R_mat
 
-R_mat <- diag(1, nrow = N) #to start
+R_matrix <- diag(1, nrow = dat_length) #to start
 
 ##### uncomment if data is not white noise ######
 #acf.lag=4
@@ -48,9 +48,9 @@ R_mat <- diag(1, nrow = N) #to start
 
 ## frequency vector
 
-freq <- seq(0,0.5, length.out = N)
+freq_vec <- seq(0,0.5, length.out = N)
 
-compute_entry <- function(i,j, N = N, K = K, taperMat = taperMat, R_mat = R_mat, freq = freq, t.vec = t.vec){
+compute_entry <- function(i,j, N = dat_length, K = setK, taperMat = taperMatrix, R_mat = R_matrix, freq = freq_vec, t.vec = t.vector){
   
   V_star_mat <- t(taperMat*exp(1i*2*pi*freq[i]*t.vec))
   
@@ -62,6 +62,6 @@ compute_entry <- function(i,j, N = N, K = K, taperMat = taperMat, R_mat = R_mat,
 
 
 
-my_list = future.apply::future_mapply(compute_entry, 1:N, rep(1:N, N))
+my_list = future.apply::future_mapply(compute_entry, 1:N, rep(1:dat_length, dat_length))
 
 
