@@ -5,8 +5,8 @@
 #### libraries #####
 library(future) #parallel
 library(future.apply) #parallel
-plan(multicore, workers = 12) # can set the number of cores with "workers = X" argument
-#plan(multisession, workers = 2)
+#plan(multicore, workers = 12) # can set the number of cores with "workers = X" argument
+plan(multisession, workers = 8)
 
 ### needed functions ####
 get_tapers <- function(t.n, W, K){
@@ -26,7 +26,7 @@ get_tapers <- function(t.n, W, K){
 
 
 ## time vector
-t.vector <- 1:200
+t.vector <- 1:400
 dat_length <- length(t.vector)
 
 ## tapers
