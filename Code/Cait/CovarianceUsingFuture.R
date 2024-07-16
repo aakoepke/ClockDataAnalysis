@@ -6,6 +6,7 @@
 library(future) #parallel
 library(future.apply) #parallel
 plan(multicore) # can set the number of cores with "workers = X" argument
+#plan(multisession, workers = 2)
 
 ### needed functions ####
 get_tapers <- function(t.n, W, K){
@@ -60,7 +61,8 @@ compute_entry <- function(i,j, N = dat_length, K = setK, taperMat = taperMatrix,
 }
 
 
-Sys.time()
+startTime = Sys.time()
+print(startTime)
 my_list = future.apply::future_mapply(compute_entry, 1:dat_length, rep(1:dat_length, dat_length))
-Sys.time()
+print(Sys.time() - startTime)
 
