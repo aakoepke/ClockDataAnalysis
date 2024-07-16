@@ -3,9 +3,9 @@
 #### calculating C_ij = ||V_i*RV_j||^2 with parallelization #####
 
 #### libraries #####
-library(future) #parallel
-library(future.apply) #parallel
-plan(multicore, workers = 12) # can set the number of cores with "workers = X" argument
+#library(future) #parallel
+#library(future.apply) #parallel
+#plan(multicore, workers = 12) # can set the number of cores with "workers = X" argument
 #plan(multisession, workers = 16)
 
 ### needed functions ####
@@ -63,6 +63,7 @@ compute_entry <- function(i,j, N = dat_length, K = setK, taperMat = taperMatrix,
 
 startTime = Sys.time()
 print(startTime)
-my_list = future.apply::future_mapply(compute_entry, 1:dat_length, rep(1:dat_length, dat_length))
+my_list = future.apply::future_mapply(compute_entry, 1:dat_length, rep(1:dat_length, dat_length))R
+
 print(Sys.time() - startTime)
 
