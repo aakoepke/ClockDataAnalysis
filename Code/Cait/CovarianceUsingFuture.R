@@ -5,7 +5,7 @@
 #### libraries #####
 library(future) #parallel
 library(future.apply) #parallel
-plan(multicore) # can set the number of cores with "workers = X" argument
+plan(multicore, workers = 12) # can set the number of cores with "workers = X" argument
 #plan(multisession, workers = 2)
 
 ### needed functions ####
