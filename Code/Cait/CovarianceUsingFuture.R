@@ -25,7 +25,7 @@ get_tapers <- function(t.n, W, K){
 
 
 ## time vector
-t.vector <- 1:1000
+t.vector <- 1:200
 dat_length <- length(t.vector)
 
 ## tapers
@@ -51,7 +51,6 @@ R_matrix <- diag(1, nrow = dat_length) #to start
 freq_vec <- seq(0,0.5, length.out = N)
 
 compute_entry <- function(i,j, N = dat_length, K = setK, taperMat = taperMatrix, R_mat = R_matrix, freq = freq_vec, t.vec = t.vector){
-  
   V_star_mat <- t(taperMat*exp(1i*2*pi*freq[i]*t.vec))
   
   V_mat <- taperMat*exp(-1i*2*pi*freq[j]*t.vec)
@@ -61,7 +60,7 @@ compute_entry <- function(i,j, N = dat_length, K = setK, taperMat = taperMatrix,
 }
 
 
-
-my_list = future.apply::future_mapply(compute_entry, 1:N, rep(1:dat_length, dat_length))
-
+Sys.time()
+my_list = future.apply::future_mapply(compute_entry, 1:dat_length, rep(1:dat_length, dat_length))
+Sys.time()
 
