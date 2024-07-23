@@ -76,7 +76,7 @@ mtse <- modules::use("Functions.R")
 
 ### pick number of cores 
 ### can use detectCores() to see how many are available
-numCores <- 12
+numCores <- 16
 
 ### make the cluster
 cl <- makeCluster(numCores)
@@ -132,22 +132,22 @@ clusterExport(cl, "compute_entry_parallel") #functions
   my_list <- parApply(cl, FUN = compute_entry_parallel, X = upper_triangle_indices, MARGIN = 1)
   
   total_time_fast = Sys.time() - start_time_fast
-  total_time_fast 
+  print(total_time_fast) 
   
   stopCluster(cl) #stop the cluster
 #######--------------------------------###
   
 ## Make the Covariance matrix ####
-### 1. Fill in upper triangle of C.mat ####
-C.mat <- fill_upper_triangle(vec = my_list, N, incl_diag = FALSE)
-  
-### 2. Fill in lower triangle of C.mat ####
-C.mat[lower.tri(C.mat)] <- t(C.mat)[lower.tri(C.mat)]
-
-### 3. Fill in Diagonal of C.mat ####
-tN = max.lag.acf
-R_mat <- toeplitz(c(seq(1,0.1, length.out = tN), rep(0, times = N-tN))) #to start
-diag(C.mat) <- norm(t(taperMatrix)%*%R_matrix%*%taperMatrix/K, type = "2")
-
-## look at result ##
-C.mat[1:10,1:10]
+# ### 1. Fill in upper triangle of C.mat ####
+# C.mat <- fill_upper_triangle(vec = my_list, N, incl_diag = FALSE)
+#   
+# ### 2. Fill in lower triangle of C.mat ####
+# C.mat[lower.tri(C.mat)] <- t(C.mat)[lower.tri(C.mat)]
+# 
+# ### 3. Fill in Diagonal of C.mat ####
+# tN = max.lag.acf
+# R_mat <- toeplitz(c(seq(1,0.1, length.out = tN), rep(0, times = N-tN))) #to start
+# diag(C.mat) <- norm(t(taperMatrix)%*%R_mat%*%taperMatrix/K, type = "2")
+# 
+# ## look at result ##
+# C.mat[1:10,1:10]
