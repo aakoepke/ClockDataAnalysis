@@ -77,7 +77,7 @@ mtse <- modules::use("Functions.R")
 
 ### pick number of cores 
 ### can use detectCores() to see how many are available
-numCores <- 16
+numCores <- 8
 
 ### make the cluster
 cl <- makeCluster(numCores)
