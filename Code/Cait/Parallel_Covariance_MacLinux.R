@@ -10,6 +10,8 @@
 ###################-
 
 library(parallel)
+library(Rcpp)
+library(RcppArmadillo)
 
 ###################-
 #### functions ####
@@ -67,23 +69,26 @@ matrix_to_list <- function(mat) {
 }
 
 
+setwd("/home/cmb15/ClockDataAnalysis/Code/Cait")
+## mtse module
+mtse <- modules::use("Functions.R")
 
 ###################-
 #####  Method #####
 ###################-
 
 sourceCpp('est_entry_FFT.cpp')
-library(Rcpp)
 
-## Start a Cluster ####
+
+## Parallelization ####
 
 ### pick number of cores 
 ### can use detectCores() to see how many are available
-numCores <- 4
+numCores <- 16
 
-### 3. Calculate predetermined variables ####
+### 1. Calculate predetermined variables ####
 
-N=100 # length of data
+N=1000 # length of data
 t.vec <- 1:N  # time vector
 
 #### tapers
@@ -105,30 +110,33 @@ freq <- seq(0, 0.5, length.out = N)  # Frequency vector
 upper_triangle_indices <- generate_upper_triangle_indices(N)
 row_list <- matrix_to_list(as.matrix(upper_triangle_indices))
 
-## Run code on cluster ####
+## Run code on multiple cores ####
 
 ##### (run this code chunk all at once ###
 #####   for most accurate timing)      ###
   start_time_fast = Sys.time() #for timing, start time
-  
-  my_list <- list() #a vector to hold the entries
-  my_list <- mclapply(row_list,compute_entry_parallel, mc.cores = numCores)
+  print("started mclapply")
+  my_list <- vector(mode = "list", length = length(row_list)) #list() #a vector to hold the entries
+  my_list <- mclapply(row_list,compute_entry_parallel,  mc.cores = numCores)
   
   total_time_fast = Sys.time() - start_time_fast
   total_time_fast 
+  
 #######--------------------------------###
-  
-## Make the Covariance matrix ####
-### 1. Fill in upper triangle of C.mat ####
-C.mat <- fill_upper_triangle(vec = my_list, N, incl_diag = FALSE)
-  
-### 2. Fill in lower triangle of C.mat ####
-C.mat[lower.tri(C.mat)] <- t(C.mat)[lower.tri(C.mat)]
+#   
+# ## Make the Covariance matrix ####
+# ### 1. Fill in upper triangle of C.mat ####
+# C.mat <- fill_upper_triangle(vec = my_list, N, incl_diag = FALSE)
+#   
+# ### 2. Fill in lower triangle of C.mat ####
+# C.mat[lower.tri(C.mat)] <- t(C.mat)[lower.tri(C.mat)]
+# 
+# ### 3. Fill in Diagonal of C.mat ####
+# tN = max.lag.acf
+# R_mat <- toeplitz(c(seq(1,0.1, length.out = tN), rep(0, times = N-tN))) #to start
+# diag(C.mat) <- norm(t(taperMatrix)%*%R_matrix%*%taperMatrix/K, type = "2")
+# 
+# ## look at result ##
+# C.mat[1:10,1:10]
 
-### 3. Fill in Diagonal of C.mat ####
-tN = max.lag.acf
-R_mat <- toeplitz(c(seq(1,0.1, length.out = tN), rep(0, times = N-tN))) #to start
-diag(C.mat) <- norm(t(taperMatrix)%*%R_matrix%*%taperMatrix/K, type = "2")
 
-## look at result ##
-C.mat[1:10,1:10]
