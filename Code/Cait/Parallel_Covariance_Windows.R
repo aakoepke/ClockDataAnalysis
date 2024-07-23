@@ -6,7 +6,8 @@
 #####              This is meant to be used on a windows machine as an      #####
 #####              alternative to mcapply() which doesn't work on Windows.  #####
 #################################################################################-
-#Set working directory for Cait: setwd("/home/cmb15/ClockDataAnalysis/Code/Cait")
+#Set working directory for Cait: 
+#setwd("/home/cmb15/ClockDataAnalysis/Code/Cait")
 #source("Parallel_Covariance_Windows.R")
 
 ###################-
@@ -77,7 +78,7 @@ mtse <- modules::use("Functions.R")
 
 ### pick number of cores 
 ### can use detectCores() to see how many are available
-numCores <- 13
+numCores <- 14
 
 ### make the cluster
 cl <- makeCluster(numCores)
@@ -96,7 +97,7 @@ clusterEvalQ(cl, {
 
 ### 3. Calculate predetermined variables ####
 
-N=3000 # length of data
+N=5000 # length of data
 t.vec <- 1:N  # time vector
 
 #### tapers
