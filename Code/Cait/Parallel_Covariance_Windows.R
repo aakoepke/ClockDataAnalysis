@@ -6,12 +6,15 @@
 #####              This is meant to be used on a windows machine as an      #####
 #####              alternative to mcapply() which doesn't work on Windows.  #####
 #################################################################################-
+#Set working directory for Cait: setwd("/home/cmb15/ClockDataAnalysis/Code/Cait")
 
 ###################-
 #### libraries ####
 ###################-
 
 library(parallel)
+library(Rcpp)
+library(RcppArmadillo)
 
 ###################-
 #### functions ####
@@ -61,6 +64,8 @@ fill_upper_triangle <- function(vec, N, incl_diag = TRUE) {
   return(mat)
 }
 
+## mtse module
+mtse <- modules::use("Functions.R")
 
 ###################-
 #####  Method #####
@@ -71,7 +76,7 @@ fill_upper_triangle <- function(vec, N, incl_diag = TRUE) {
 
 ### pick number of cores 
 ### can use detectCores() to see how many are available
-numCores <- 16
+numCores <- 12
 
 ### make the cluster
 cl <- makeCluster(numCores)
@@ -90,7 +95,7 @@ clusterEvalQ(cl, {
 
 ### 3. Calculate predetermined variables ####
 
-N=5000 # length of data
+N=1000 # length of data
 t.vec <- 1:N  # time vector
 
 #### tapers
@@ -122,7 +127,7 @@ clusterExport(cl, "compute_entry_parallel") #functions
 ##### (run this code chunk all at once ###
 #####   for most accurate timing)      ###
   start_time_fast = Sys.time() #for timing, start time
-  
+  print("start parallel")
   my_list <- list() #a vector to hold the entries
   my_list <- parApply(cl, FUN = compute_entry_parallel, X = upper_triangle_indices, MARGIN = 1)
   
