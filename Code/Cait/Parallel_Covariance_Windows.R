@@ -7,6 +7,7 @@
 #####              alternative to mcapply() which doesn't work on Windows.  #####
 #################################################################################-
 #Set working directory for Cait: setwd("/home/cmb15/ClockDataAnalysis/Code/Cait")
+#source("Parallel_Covariance_Windows.R")
 
 ###################-
 #### libraries ####
@@ -95,7 +96,7 @@ clusterEvalQ(cl, {
 
 ### 3. Calculate predetermined variables ####
 
-N=1000 # length of data
+N=1500 # length of data
 t.vec <- 1:N  # time vector
 
 #### tapers
