@@ -88,7 +88,7 @@ numCores <- 16
 
 ### 1. Calculate predetermined variables ####
 
-N=1000 # length of data
+N=1500 # length of data
 t.vec <- 1:N  # time vector
 
 #### tapers
@@ -120,7 +120,7 @@ row_list <- matrix_to_list(as.matrix(upper_triangle_indices))
   my_list <- mclapply(row_list,compute_entry_parallel,  mc.cores = numCores)
   
   total_time_fast = Sys.time() - start_time_fast
-  total_time_fast 
+  print(total_time_fast) 
   
 #######--------------------------------###
 #   
