@@ -77,7 +77,7 @@ mtse <- modules::use("Functions.R")
 
 ### pick number of cores 
 ### can use detectCores() to see how many are available
-numCores <- 8
+numCores <- 14
 
 ### make the cluster
 cl <- makeCluster(numCores)
@@ -96,7 +96,7 @@ clusterEvalQ(cl, {
 
 ### 3. Calculate predetermined variables ####
 
-N=1500 # length of data
+N=3000 # length of data
 t.vec <- 1:N  # time vector
 
 #### tapers
