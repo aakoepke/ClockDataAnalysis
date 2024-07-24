@@ -7,8 +7,8 @@
 #####              alternative to mcapply() which doesn't work on Windows.  #####
 #################################################################################-
 #Set working directory for Cait: 
-#setwd("/home/cmb15/ClockDataAnalysis/Code/Cait")
-#source("Parallel_Covariance_Windows.R")
+# setwd("/home/cmb15/ClockDataAnalysis/Code/Cait")
+# source("Parallel_Covariance_Windows.R")
 
 ###################-
 #### libraries ####
@@ -97,7 +97,8 @@ clusterEvalQ(cl, {
 
 ### 3. Calculate predetermined variables ####
 
-N=5000 # length of data
+N=128 # length of data
+N.fourier = floor(N/2) + 1
 t.vec <- 1:N  # time vector
 
 #### tapers
@@ -113,15 +114,20 @@ c_vec <- c(sample.acf,rep(0, times = N-max.lag.acf), 0, rep(0, times = N-max.lag
 length(c_vec)
 
 #### frequency vector
-freq <- seq(0, 0.5, length.out = N)  # Frequency vector
+freq <- seq(0, 0.5, length.out = N.fourier)  # Frequency vector
 
 #### list of indices (don't really need to send this to the cluster, but good for debugging if needed)
-upper_triangle_indices <- generate_upper_triangle_indices(N)
+upper_triangle_indices <- generate_upper_triangle_indices(N.fourier)
 
 ### 4. Send variables/necessary functions to the cluster ####
 
 clusterExport(cl, list("t.vec", "N", "K", "c_vec", "taperMatrix", "freq", "upper_triangle_indices")) #objects
 clusterExport(cl, "compute_entry_parallel") #functions
+
+start_time_fast = Sys.time()
+compute_entry_parallel(upper_triangle_indices[1,])
+total_time_fast = Sys.time() - start_time_fast
+total_time_fast
 
 
 ## Run code on cluster ####
@@ -139,17 +145,19 @@ clusterExport(cl, "compute_entry_parallel") #functions
   stopCluster(cl) #stop the cluster
 #######--------------------------------###
   
+
+  
 ## Make the Covariance matrix ####
-# ### 1. Fill in upper triangle of C.mat ####
-# C.mat <- fill_upper_triangle(vec = my_list, N, incl_diag = FALSE)
-#   
-# ### 2. Fill in lower triangle of C.mat ####
-# C.mat[lower.tri(C.mat)] <- t(C.mat)[lower.tri(C.mat)]
-# 
-# ### 3. Fill in Diagonal of C.mat ####
-# tN = max.lag.acf
-# R_mat <- toeplitz(c(seq(1,0.1, length.out = tN), rep(0, times = N-tN))) #to start
-# diag(C.mat) <- norm(t(taperMatrix)%*%R_mat%*%taperMatrix/K, type = "2")
-# 
-# ## look at result ##
-# C.mat[1:10,1:10]
+### 1. Fill in upper triangle of C.mat ####
+C.mat <- fill_upper_triangle(vec = my_list, N.fourier, incl_diag = FALSE)
+
+### 2. Fill in lower triangle of C.mat ####
+C.mat[lower.tri(C.mat)] <- t(C.mat)[lower.tri(C.mat)]
+
+### 3. Fill in Diagonal of C.mat ####
+tN = max.lag.acf
+R_mat <- toeplitz(c(seq(1,0.1, length.out = tN), rep(0, times = N-tN))) #to start
+diag(C.mat) <- norm(t(taperMatrix)%*%R_mat%*%taperMatrix/K, type = "2")
+
+## look at result ##
+C.mat[1:10,1:10]
